@@ -33,15 +33,33 @@ comcast.clean <- comcast.text %>%
     ## force lower case
     sapply(tolower) %>%
     ## get rid of possessive's
-    sapply(function(i) gsub("'s\\b", "", i) %>%
+    sapply(function(i) gsub("'s\\b", "", i)) %>%
     ## strip html special characters
     sapply(function(i) gsub("&.*;", "", i)) %>%
     ## make all whitespace into spaces
     sapply(function(i) gsub("[[:space:]]", " ", i)) %>%
     ## strip punctuation
     sapply(removePunctuation)
+
+#### strip stop words
+comcast.clean <- sapply(comcast.clean, removeWords,
+                        words = removePunctuation(stopwords("SMART")))
+
 names(comcast.clean) <- NULL
 head(comcast.clean)
 
-          
+#### create a corpus, wordcloud
+comcast.corpus <- Corpus(VectorSource(comcast.clean))
+wordcloud(comcast.corpus)
 
+
+comcast.polar <- factor(classify_polarity(comcast.clean)[,4])
+comcast.polar[is.na(comcast.polar)] <- "unknown"
+l.polar <- levels(comcast.polar)
+n.polar <- length(l.polar)
+by.polar <- sapply(l.polar, function(p)
+    paste(comcast.clean[comcast.polar == p], collapse = " "))
+polar.corpus <- Corpus(VectorSource(by.polar))
+polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
+colnames(polar.doc.mat) <- l.polar
+comparison.cloud(polar.doc.mat[,-2])
