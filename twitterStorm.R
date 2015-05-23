@@ -47,14 +47,18 @@ comcast.clean <- sapply(comcast.clean, removeWords,
 
 names(comcast.clean) <- NULL
 head(comcast.clean)
+comcast.df$clean <- comcast.clean
+write.table(comcast.df, "comcastTweetsDF.tsv", sep="\t")
 
 #### create a corpus, wordcloud
 comcast.corpus <- Corpus(VectorSource(comcast.clean))
-wordcloud(comcast.corpus)
+wordcloud(comcast.corpus, scale = c(2, .5))
 
 #### Polarity stuff, comparison clound
 ## classify polarity of tweets
-comcast.polar <- factor(classify_polarity(comcast.clean)[,4])
+polar.df <- data.frame(classify_polarity(comcast.clean))
+polar.df[1:3] <- apply(polar.df[1:3], 2, as.numeric)
+comcast.polar <- polar.df$BEST_FIT
 comcast.polar[is.na(comcast.polar)] <- "unknown"
 ## get levels of polarity
 l.polar <- levels(comcast.polar)
@@ -69,3 +73,22 @@ polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
 colnames(polar.doc.mat) <- l.polar
 ## make a comparison cloud of positive vs. negative
 comparison.cloud(polar.doc.mat[,-2])
+
+#### clustering
+library(flexclust)
+comcast.doc.mat <- t(as.matrix(TermDocumentMatrix(comcast.corpus)))
+dim(comcast.doc.mat)
+dist.mat <- dist(comcast.doc.mat, method = "binary")
+comcast.hclust <- hclust(dist.mat)
+plot(comcast.hclust)
+
+ggplot(polar.df, aes(x = POS, y = NEG, color = BEST_FIT)) +
+    geom_point()
+
+ctrl <- list(iter.max = 20, tolerance = 0.001)
+f.ctrl <- as(ctrl, "flexclustControl")
+foo <- kcca(x = comcast.doc.mat[30,],
+            k = 2,
+            family = kccaFamily("kmedians"),
+            control = f.ctrl)
+image(foo)
