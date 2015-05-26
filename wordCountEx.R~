@@ -1,0 +1,12 @@
+library(RStorm)  # Include package RStorm
+data(sentences)
+
+# R function that receives a tuple
+# (a sentence in this case)
+# and splits it into words:
+SplitSentence <- function(tuple, ...){
+    # Split the sentence into words
+    words <- unlist(strsplit(as.character(tuple$sentence), " "))
+    # For each word emit a tuple
+    for (word in words) Emit(Tuple(data.frame(word = word)), ...)
+}
