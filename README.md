@@ -2,4 +2,36 @@
 This repository contains code used to prototype a streaming framework
 for analysing Tweets about Comcast using the RStorm packages.
 
-This was primarily created for a presentation at Interface 2015
+This is primarily being created for a presentation/tutorial at
+Interface 2015.
+
+### Purpose
+The purpose of the stream is to simulate/prototype a streaming framework for a
+someone wishing to analyze tweets matching a given topic, in this case
+Comcast.  The stream will:
+
+1. Keep track and visualize (with a wordcloud) common terms associated
+   with the topic.
+2. Classify and visualize the polarity (positive/negative/neutral) of
+   tweets and visual common words in each class.
+3. Keep track of the proportion of positive tweets as time goes on.
+4. Visualize and report the rate of tweets in a given time frame.
+
+### Dependencies
+This project requires several R packages:
+
+- `RStorm`
+- `twitteR`
+- `sentiment`*
+- `wordcloud`
+- `dplyr`
+- `tidyr`
+
+Most of these packages can be installed from CRAN, but `sentiment`
+needs to be installed from source:
+
+```
+install.packages("http://cran.r-project.org/src/contrib/Archive/sentiment/sentiment_0.2.tar.gz",
+	             repo = NULL, type = "source")
+```
+
