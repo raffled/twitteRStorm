@@ -51,6 +51,7 @@ strip.text <- function(tuple, ...){
         sapply(function(i) gsub("[[:space:]]", " ", i)) %>%
         ## strip punctuation
         removePunctuation
+    names(text.clean) <- NULL
     t.stamp <- tuple$t.stamp
     Emit(Tuple(data.frame(text = text.clean, t.stamp = t.stamp)), ...)
 }
@@ -60,8 +61,7 @@ strip.stopwords <- function(tuple, ...){
     text.content <- removeWords(as.character(tuple$text),
                                 removePunctuation(stopwords("SMART")))
     t.stamp <- tuple$t.stamp
-    Emit(Tuple(data.frame(text = text.content,
-                          t.stamp = t.stamp)))
+    Emit(Tuple(data.frame(text = text.content, t.stamp = t.stamp)), ...)
 }
 topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 2))
 
@@ -74,7 +74,7 @@ store.words <- function(tuple, ...){
     word.df <- rbind(word.df, this.df)
     SetHash("word.df", word.df)
 }
-topo <- AddBolt(topo, Bolt(store.words, listen = 2))
+topo <- AddBolt(topo, Bolt(store.words, listen = 3))
 
 result <- RStorm(topo)
 foo <- GetHash("word.df", result)
