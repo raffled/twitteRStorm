@@ -130,10 +130,15 @@ comparison.cloud(polar.doc.mat)
 #### timeplot of polarity
 (prop.df <- GetTrack("prop.df", result))
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
-ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
-    geom_point() + geom_line() 
+g1 <- ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
+    geom_point() + geom_line() + theme(legend.position = "top")
 
 ## timeplot of tweets per minute
 tpm.df <- GetTrack("tpm.df", result)
-ggplot(tp, aes(x = t.stamp, y = tpm
+g2 <- ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + geom_point() +
+    geom_line()
+source("multiplot.R")
+multiplot(g1, g2)
+
+    
 
