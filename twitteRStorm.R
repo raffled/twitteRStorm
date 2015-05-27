@@ -29,9 +29,8 @@ load("comcastTweetsDF.bin")  ## loads data.frame comcast.df
 topo <- Topology(comcast.df)
 
 get.text <- function(tuple, ...){
-    text <- tuple$text
-    t.stamp <- tuple$created
-    Emit(Tuple(data.frame(text = text, t.stamp = t.stamp)), ...)
+    Emit(Tuple(data.frame(text = tuple$text,
+                          t.stamp = tuple$created)), ...)
 }
 topo <- AddBolt(topo, Bolt(get.text, listen = 0))
 
@@ -51,30 +50,33 @@ strip.text <- function(tuple, ...){
         sapply(function(i) gsub("[[:space:]]", " ", i)) %>%
         ## strip punctuation
         removePunctuation
-    t.stamp <- tuple$t.stamp
-    Emit(Tuple(data.frame(text = text.clean, t.stamp = t.stamp)), ...)
+    names(text.clean) <- NULL ## needed to avoid RStorm missing name error?
+    Emit(Tuple(data.frame(text = text.clean, t.stamp = tuple$t.stamp)), ...)
 }
 topo <- AddBolt(topo, Bolt(strip.text, listen = 1))
 
 strip.stopwords <- function(tuple, ...){
     text.content <- removeWords(as.character(tuple$text),
                                 removePunctuation(stopwords("SMART")))
-    t.stamp <- tuple$t.stamp
     Emit(Tuple(data.frame(text = text.content,
-                          t.stamp = t.stamp)))
+                          t.stamp = tuple$t.stamp)), ...)
 }
 topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 2))
 
-store.words <- function(tuple, ...){
-    word.df <- GetHash("word.df")
-    if(!is.data.frame(word.df)) words.df <- data.frame()
-    t.stamp <- tuple$t.stamp
-    this.df <- data.frame(text = tuple$text,
-                          t.stamp = t.stamp)
-    word.df <- rbind(word.df, this.df)
-    SetHash("word.df", word.df)
+get.polarity <- function(tuple, ...){
+    polarity <- classify_polarity(tuple$text)
+    Emit(Tuple(data.frame(text = tuple$text,
+                          t.stamp = tuple$t.stamp,
+                          polarity = polarity)
 }
-topo <- AddBolt(topo, Bolt(store.words, listen = 2))
+
+store.tweet <- function(tuple, ...){
+    tweet.df <- GetHash("tweet.df")
+    if(!is.data.frame(tweet.df)) tweet.df <- data.frame()
+    word.df <- rbind(tweet.df, tuple)
+    SetHash("tweet.df", word.df)
+}
+topo <- AddBolt(topo, Bolt(store.words, listen = 3))
 
 result <- RStorm(topo)
 foo <- GetHash("word.df", result)

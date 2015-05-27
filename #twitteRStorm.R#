@@ -29,9 +29,8 @@ load("comcastTweetsDF.bin")  ## loads data.frame comcast.df
 topo <- Topology(comcast.df)
 
 get.text <- function(tuple, ...){
-    text <- tuple$text
-    t.stamp <- tuple$created
-    Emit(Tuple(data.frame(text = text, t.stamp = t.stamp)), ...)
+    Emit(Tuple(data.frame(text = tuple$text,
+                          t.stamp = tuple$created)), ...)
 }
 topo <- AddBolt(topo, Bolt(get.text, listen = 0))
 
@@ -51,35 +50,52 @@ strip.text <- function(tuple, ...){
         sapply(function(i) gsub("[[:space:]]", " ", i)) %>%
         ## strip punctuation
         removePunctuation
-    names(text.clean) <- NULL
-    t.stamp <- tuple$t.stamp
-    Emit(Tuple(data.frame(text = text.clean, t.stamp = t.stamp)), ...)
+    names(text.clean) <- NULL ## needed to avoid RStorm missing name error?
+    Emit(Tuple(data.frame(text = text.clean, t.stamp = tuple$t.stamp)), ...)
 }
 topo <- AddBolt(topo, Bolt(strip.text, listen = 1))
 
 strip.stopwords <- function(tuple, ...){
     text.content <- removeWords(as.character(tuple$text),
                                 removePunctuation(stopwords("SMART")))
-    t.stamp <- tuple$t.stamp
-    Emit(Tuple(data.frame(text = text.content, t.stamp = t.stamp)), ...)
+    Emit(Tuple(data.frame(text = text.content,
+                          t.stamp = tuple$t.stamp)), ...)
 }
 topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 2))
 
-store.words <- function(tuple, ...){
-    word.df <- GetHash("word.df")
-    if(!is.data.frame(word.df)) words.df <- data.frame()
-    t.stamp <- tuple$t.stamp
-    this.df <- data.frame(text = tuple$text,
-                          t.stamp = t.stamp)
-    word.df <- rbind(word.df, this.df)
-    SetHash("word.df", word.df)
+get.polarity <- function(tuple, ...){
+    polarity <- classify_polarity(tuple$text)[,4]
+    Emit(Tuple(data.frame(text = tuple$text,
+                          t.stamp = tuple$t.stamp,
+                          polarity = polarity)), ...)
 }
-topo <- AddBolt(topo, Bolt(store.words, listen = 3))
+topo <- AddBolt(topo, Bolt(get.polarity, listen = 3))
 
+store.tweet <- function(tuple, ...){
+    tweet.df <- GetHash("tweet.df")
+    if(!is.data.frame(tweet.df)) tweet.df <- data.frame()
+    word.df <- rbind(tweet.df, tuple)
+    SetHash("tweet.df", word.df)
+}
+topo <- AddBolt(topo, Bolt(store.tweet, listen = 4))
+
+#### get results
 result <- RStorm(topo)
-foo <- GetHash("word.df", result)
-foo$count <- sapply(foo$text, function(i)
-    length(unlist(strsplit(as.character(i), " "))), USE.NAMES = FALSE)
+foo <- GetHash("tweet.df", result)
+
+#### word cloud
+word.vec <- paste(foo$text, collapse = " ")
+wordcloud(word.vec)
+
+#### comparison cloud
+l.polar <- levels(foo$polarity)
+n.polar <- length(l.polar)
+by.polar <- sapply(l.polar, function(p)
+    paste(foo$text[foo$polarity == p], collapse = " "))
+polar.corpus <- Corpus(VectorSource(by.polar))
+polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
+colnames(polar.doc.mat) <- l.polar
+comparison.cloud(polar.doc.mat)
 
 ggplot(foo, aes(x = t.stamp, y = count)) + geom_line()
 
