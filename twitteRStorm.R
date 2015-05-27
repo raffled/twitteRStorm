@@ -99,7 +99,7 @@ track.tweet <- function(tuple, ...){
         in.last.min <-  (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp.current)
         tpm <- length(t.stamp.past[in.last.min])
     } else {
-        tpm <- 0 
+        tpm <- length(t.stamp.past <= t.stamp.current)
     }
     TrackRow("tpm.df", data.frame(tpm = tpm, t.stamp = t.stamp.current))
         
@@ -130,10 +130,15 @@ comparison.cloud(polar.doc.mat)
 #### timeplot of polarity
 (prop.df <- GetTrack("prop.df", result))
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
-ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
-    geom_point() + geom_line() 
+g1 <- ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
+    geom_point() + geom_line() + theme(legend.position = "top")
 
 ## timeplot of tweets per minute
 tpm.df <- GetTrack("tpm.df", result)
-ggplot(prop.df.long, aes(x = t.stamp, y = tpm
+g2 <- ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + geom_point() +
+    geom_line()
+source("multiplot.R")
+multiplot(g1, g2)
+
+    
 
