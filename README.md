@@ -35,3 +35,16 @@ install.packages("http://cran.r-project.org/src/contrib/Archive/sentiment/sentim
 	             repo = NULL, type = "source")
 ```
 
+### Status
+Current Contents:
+
+File             | Description
+-----------------|----------------------------
+`twitteRStorm.R` | Current prototype of stream
+`scratch.R`      | Statis analysis of tweets, used to get ideas for analysis. 
+`comcastTweets.bin` | Binary file of R data.frame `comcast.df`, used
+to store tweets for consistency in development.
+`wordCountEx.R` | Example of using RStorm for word counts in sentences
+from RStorm doc.
+`README.md` | Readme file for project.
+`license.md` | License document for project.
