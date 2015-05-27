@@ -22,11 +22,13 @@ library(tidyr)
 ## comcast.df <- twListToDF(comcast.list)
 ## head(comcast.df)
 ## dim(comcast.df)
+## ## Reverse order to emulate streaming data
+## comcast.df <- comcast.df[order(comcast.df$created),]
 ## save(comcast.df, file = "comcastTweetsDF.bin")
 load("comcastTweetsDF.bin")  ## loads data.frame comcast.df
 
 ################################ Topology ################################
-topo <- Topology(comcast.df)
+topo <- Topology(comcast.df[1:100,]) ## subset for testing
 
 get.text <- function(tuple, ...){
     Emit(Tuple(data.frame(text = tuple$text,
@@ -64,24 +66,74 @@ strip.stopwords <- function(tuple, ...){
 topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 2))
 
 get.polarity <- function(tuple, ...){
-    polarity <- classify_polarity(tuple$text)
+    polarity <- classify_polarity(tuple$text)[,4]
     Emit(Tuple(data.frame(text = tuple$text,
                           t.stamp = tuple$t.stamp,
-                          polarity = polarity)
+                          polarity = polarity)), ...)
 }
+topo <- AddBolt(topo, Bolt(get.polarity, listen = 3))
 
-store.tweet <- function(tuple, ...){
+track.tweet <- function(tuple, ...){
+    ## build data.frame of tweets
     tweet.df <- GetHash("tweet.df")
     if(!is.data.frame(tweet.df)) tweet.df <- data.frame()
-    word.df <- rbind(tweet.df, tuple)
-    SetHash("tweet.df", word.df)
+    tweet.df <- rbind(tweet.df, tuple)
+    SetHash("tweet.df", tweet.df)
+
+    ## track polarity
+    polarity <- tweet.df$polarity
+    polar.mat <- cbind(
+        p.positive = polarity == "positive",
+        p.neutral = polarity == "neutral",
+        p.negative = polarity == "negative")
+    prop.df <- data.frame(t(colMeans(polar.mat, na.rm = TRUE)),
+                          t.stamp = tuple$t.stamp)
+    TrackRow("prop.df", prop.df)
+
+    ## get recent tweet rate
+    last.min <- tuple$t.stamp - 60
+    t.stamp.past <- tweet.df$t.stamp
+    t.stamp.current <- tuple$t.stamp
+    ## get tweets per minute (tpm) if we're at least a minute into the stream
+    if(last.min >= min(t.stamp.past)){
+        in.last.min <-  (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp.current)
+        tpm <- length(t.stamp.past[in.last.min])
+    } else {
+        tpm <- 0 
+    }
+    TrackRow("tpm.df", data.frame(tpm = tpm, t.stamp = t.stamp.current))
+        
+    ## pass the tuple through to maintain order of bolts
+    Emit(Tuple(tuple), ...)
 }
-topo <- AddBolt(topo, Bolt(store.words, listen = 3))
+topo <- AddBolt(topo, Bolt(track.tweet, listen = 4))
 
+
+#### get results
 result <- RStorm(topo)
-foo <- GetHash("word.df", result)
-foo$count <- sapply(foo$text, function(i)
-    length(unlist(strsplit(as.character(i), " "))), USE.NAMES = FALSE)
+foo <- GetHash("tweet.df", result)
 
-ggplot(foo, aes(x = t.stamp, y = count)) + geom_line()
+#### word cloud
+word.vec <- paste(foo$text, collapse = " ")
+wordcloud(word.vec)
+
+#### comparison cloud
+l.polar <- levels(foo$polarity)
+n.polar <- length(l.polar)
+by.polar <- sapply(l.polar, function(p)
+    paste(foo$text[foo$polarity == p], collapse = " "))
+polar.corpus <- Corpus(VectorSource(by.polar))
+polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
+colnames(polar.doc.mat) <- l.polar
+comparison.cloud(polar.doc.mat)
+
+#### timeplot of polarity
+(prop.df <- GetTrack("prop.df", result))
+prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
+ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
+    geom_point() + geom_line() 
+
+## timeplot of tweets per minute
+tpm.df <- GetTrack("tpm.df", result)
+ggplot(prop.df.long, aes(x = t.stamp, y = tpm
 
