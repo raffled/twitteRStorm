@@ -28,7 +28,7 @@ library(tidyr)
 load("comcastTweetsDF.bin")  ## loads data.frame comcast.df
 
 ################################ Topology ################################
-topo <- Topology(comcast.df[1:100,]) ## subset for testing
+topo <- Topology(comcast.df) ## subset for testing
 
 get.text <- function(tuple, ...){
     Emit(Tuple(data.frame(text = tuple$text,
@@ -110,12 +110,14 @@ topo <- AddBolt(topo, Bolt(track.tweet, listen = 4))
 
 
 #### get results
-result <- RStorm(topo)
-foo <- GetHash("tweet.df", result)
+system.time(result <- RStorm(topo))
+comcast.results <- GetHash("tweet.df", result)
 
 #### word cloud
-word.vec <- paste(foo$text, collapse = " ")
-wordcloud(word.vec)
+word.vec <- paste(comcast.results$text, collapse = " ")
+wordcloud(word.vec, min.freq = 10,
+          colors = brewer.pal(8, "Dark2"),
+          scale = c(4, 1))
 
 #### comparison cloud
 l.polar <- levels(foo$polarity)
@@ -125,10 +127,11 @@ by.polar <- sapply(l.polar, function(p)
 polar.corpus <- Corpus(VectorSource(by.polar))
 polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
 colnames(polar.doc.mat) <- l.polar
-comparison.cloud(polar.doc.mat)
+comparison.cloud(polar.doc.mat, scale = c(3, 1),
+                 max.words = 100, title.size = 2)
 
 #### timeplot of polarity
-(prop.df <- GetTrack("prop.df", result))
+prop.df <- GetTrack("prop.df", result)
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
 g1 <- ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
     geom_point() + geom_line() + theme(legend.position = "top")
@@ -140,5 +143,7 @@ g2 <- ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + geom_point() +
 source("multiplot.R")
 multiplot(g1, g2)
 
-    
-
+comcast_results <- list(tweets.df = comcast.results,
+                        proportion.df = prop.df,
+                        tpm.df = tpm.df)
+save(comcast_results, file = "comcast_results.bin")
