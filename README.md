@@ -40,6 +40,7 @@ Current Contents:
 
 File             | Description
 -----------------|----------------------------
+comcast_shiny    | Folder containing shiny demo
 `twitteRStorm.R` | Current prototype of stream
 `scratch.R`      | Statis analysis of tweets, used to get ideas for analysis. 
 `comcastTweets.bin` | Binary file of R data.frame `comcast.df`, used to store tweets for consistency in development.
