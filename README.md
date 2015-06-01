@@ -63,7 +63,7 @@ consumer key and secret and access token and secret, then call
 secret, and tokens: 
 
 1. Have a valid Twitter Account
-2. Go to (https://apps.twitter.com/)[https://apps.twitter.com/]
+2. Go to [https://apps.twitter.com/](https://apps.twitter.com/)
 3. Click `Create New App`
 4. You can fill in dummy values for Name, Description, and Website
 5. Once you're in your App, click on `Keys and Access Tokens`
@@ -87,6 +87,6 @@ The dashboard is designed to prototype how a dashboard for monitoring
 tweets might took.  You can run the app locally by calling
 `shiny::runApp()` in `R` from within the `comcast_dash` directory.
 
-Alternatively, you can run the app from (shinyapps.io)[shinyapps.io]
+Alternatively, you can run the app from [shinyapps.io](shinyapps.io)
 using the link:
-(https://raffled.shinyapps.io/comcast_dash)[https://raffled.shinyapps.io/comcast_dash].
+[https://raffled.shinyapps.io/comcast_dash](https://raffled.shinyapps.io/comcast_dash).
