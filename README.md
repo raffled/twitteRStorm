@@ -48,3 +48,45 @@ comcast_dash    | Folder containing shiny demo
 `README.md` | Readme file for project.
 `license.md` | License document for project.
 
+### Running twitteRStorm.R
+Assuming the packages are isntalled, running the RStorm stream is very
+straightforward. **Dependencies** for a list of required packages and
+instructions for installing `sentiment`.
+
+#### Authorizing `twitteR`
+The only modifications you need to make are in the commented section
+at the head of the documents. In order to search for tweets with
+`twitteR`, you need to have a valid Twitter account. In the commented
+region at the top of `twitteRStorm.R`, you will need to enter your
+consumer key and secret and access token and secret, then call
+`setup_twitter_oath()` with these strings.  To get your access key,
+secret, and tokens: 
+
+1. Have a valid Twitter Account
+2. Go to (https://apps.twitter.com/)[https://apps.twitter.com/]
+3. Click `Create New App`
+4. You can fill in dummy values for Name, Description, and Website
+5. Once you're in your App, click on `Keys and Access Tokens`
+6. The consumer key and secret will already exist, but click `Create
+   my access token` for the access token and secret
+7. Copy and paste these values in `R` and use them to run
+   `setup_twitter_oath()`
+
+From here, you can search for tweets with `searchTwitter()` and
+convert the results to a data.frame with `twListToDF()`.  At this
+point, all code should run as-is, with the exception of the name of
+your tweet data.frame.
+
+If you plan on developing the stream over time, saving the tweet
+data.frame and loading it at the start of each session will ensure
+that you have consistent data between sessions and save you the time
+of authorizing each session.
+
+### Viewing the Dashboard
+The dashboard is designed to prototype how a dashboard for monitoring
+tweets might took.  You can run the app locally by calling
+`shiny::runApp()` in `R` from within the `comcast_dash` directory.
+
+Alternatively, you can run the app from (shinyapps.io)[shinyapps.io]
+using the link:
+(https://raffled.shinyapps.io/comcast_dash)[https://raffled.shinyapps.io/comcast_dash].
