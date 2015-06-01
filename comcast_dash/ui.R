@@ -3,6 +3,7 @@ dashboardPage(skin = "red",
     dashboardHeader(title = "Comcast Tweets"),
     dashboardSidebar(
         h4("Doug Raffle"),
+        p("Department of Statistics, WVU"),
         hr(),
         p("This is a simulation showing how a reporting dashboard for a Storm streaming analysis of incoming tweets might look."),
         p("Click the \"play\" arrow on the Time in Stream slider to start the stream"),
