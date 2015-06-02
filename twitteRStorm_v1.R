@@ -99,7 +99,7 @@ track.tweet <- function(tuple, ...){
         in.last.min <-  (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp.current)
         tpm <- length(t.stamp.past[in.last.min])
     } else {
-        tpm <- length(t.stamp.past <= t.stamp.current)
+        tpm <- length(t.stamp.past)
     }
     TrackRow("tpm.df", data.frame(tpm = tpm, t.stamp = t.stamp.current))
         
