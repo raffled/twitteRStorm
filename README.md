@@ -41,10 +41,9 @@ Current Contents:
 File             | Description
 -----------------|----------------------------
 comcast_dash    | Folder containing shiny demo
-`twitteRStorm_v1.R` | Old prototype of stream. Kept around because
-output is still used for dash.
+`twitteRStorm_v1.R` | Old prototype of stream. 
 `twitteRStorm_v2.R` | Current prototype of stream w/ branchin topology
-`scratch.R`      | Statis analysis of tweets, used to get ideas for analysis. 
+`scratch.R`      | Statis analysis of tweets, used to get ideas for analysis.
 `comcastTweets.bin` | Binary file of R data.frame `comcast.df`, used to store tweets for consistency in development.
 `wordCountEx.R` | Example of using RStorm for word counts in sentences from RStorm doc.
 `README.md` | Readme file for project.
