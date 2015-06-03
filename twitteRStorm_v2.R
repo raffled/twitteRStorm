@@ -64,7 +64,7 @@ get.text <- function(tuple, ...){
 }
 topo <- AddBolt(topo, Bolt(get.text, listen = 0, boltID = 2))
 
-strip.text <- function(tuple, ...){
+clean.text <- function(tuple, ...){
     text.clean <- tuple$text %>%
         ## convert to UTF-8
         iconv(to = "UTF-8") %>%
@@ -84,7 +84,7 @@ strip.text <- function(tuple, ...){
     names(text.clean) <- NULL ## needed to avoid RStorm missing name error?
     Emit(Tuple(data.frame(text = text.clean, t.stamp = tuple$t.stamp)), ...)
 }
-topo <- AddBolt(topo, Bolt(strip.text, listen = 2, boltID = 3))
+topo <- AddBolt(topo, Bolt(clean.text, listen = 2, boltID = 3))
 
 strip.stopwords <- function(tuple, ...){
     text.content <- removeWords(tuple$text,
