@@ -41,6 +41,7 @@ Current Contents:
 File             | Description
 -----------------|----------------------------
 comcast_dash    | Folder containing shiny demo
+presentation | Folder containing presentation source code
 `twitteRStorm_v1.R` | Old prototype of stream. 
 `twitteRStorm_v2.R` | Current prototype of stream w/ branchin topology
 `scratch.R`      | Statis analysis of tweets, used to get ideas for analysis.
