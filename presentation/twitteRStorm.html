@@ -200,14 +200,101 @@
 <li>Databases</li>
 </ul>
 
-</article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
+</article></slide><slide class=''><hgroup><h2>The Topology Visualized</h2></hgroup><article  id="the-topology-visualized">
+
+<p><img style="width: 800px; height: 500px; float: center;" src="storm_topology.png"></p>
+
+</article></slide><slide class=''><hgroup><h2>Getting Storm Running</h2></hgroup><article  id="getting-storm-running">
+
+<p>So how do we get Storm up-and-running?</p>
+
+<ul>
+<li>Storm is a complex framework with many dependencies</li>
+<li>Requires a data engineering team to implement at scale</li>
+<li>Even a local set up is time consuming and requires a fair amount of technical knowledge</li>
+</ul>
+
+<p>Is there a Vagrant box?</p>
+
+<ul>
+<li>Wirbelsturm <span class="cite">(Noll 2015)</span></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Developing Topologies</h2></hgroup><article  id="developing-topologies">
+
+<p>What language do we use to create topologies? It depends.</p>
+
+<p>Spouts</p>
+
+<ul>
+<li>Written in a Java Virtual Machine language (JVM), e.g. Java, Clojure, Scala</li>
+</ul>
+
+<p>Bolts</p>
+
+<ul>
+<li>Each one is a separate source file</li>
+<li>Can be written in any language using the Multi-Language Protocol</li>
+<li>Non-JVM languages (e.g. R, Python) must be wrapped in a JVM language</li>
+</ul>
+
+<p>Topology</p>
+
+<ul>
+<li>Specified in YAML, packaged by Maven</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>RStorm</h2></hgroup><article  id="rstorm">
+
+<p>Most statisticians and data scientists aren&#39;t fluent in JVM languages. What do we do?</p>
+
+<p>The <code>RStorm</code> package <span class="cite">(Kaptein 2013)</span> is designed to <em>simulate</em> a Storm topology.</p>
+
+<ul>
+<li><code>R</code> programmers can develop a topology in a familiar language</li>
+<li>Organizations can evaluate whether or not Storm is appropriate for their project</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>RStorm</h2></hgroup><article  id="rstorm-1">
+
+<p>RStorm is:</p>
+
+<ul>
+<li>A simulation of Storm</li>
+<li>A first draft or scratch pad</li>
+</ul>
+
+<p>RStorm is <strong>not</strong>:</p>
+
+<ul>
+<li>An equivalent of Rhipe/RHadoop</li>
+<li>A way of communicating with Storm through R</li>
+<li>Used to write bolts that Storm can read</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Case Study: Twitter</h2></hgroup><article  id="case-study-twitter">
+
+<p>You&#39;re a data scientist working for Comcast, and management wants to monitor tweets mentioning you company. In particular, they want to:</p>
+
+<ol>
+<li>Keep track of common terms</li>
+<li>Keep track of positive and negative tweets (polarity)</li>
+<li>Know what topics associated with each polarity</li>
+<li>Track the polarity over time</li>
+<li>Track of the rate of tweets</li>
+<li>Have a dashboard for the marketing team to monitor, like <a href='http://raffled.shinyapps.io/comcast_dash' title=''>this</a></li>
+</ol>
 
 <div class="references">
 </article></slide><slide class=''><hgroup><h2>References</h2></hgroup><article  id="references" class="unnumbered">
 
 <p>“Apache Storm.” 2015. <a href='https://storm.apache.org/' title=''>https://storm.apache.org/</a>.</p>
 
-<p>“Companies Using Apache Storm.” 2015. <a href='http://storm.apache.org/documentation/Powered-By.html' title=''>http://storm.apache.org/documentation/Powered-By.html</a>.</p></div></article></slide>
+<p>“Companies Using Apache Storm.” 2015. <a href='http://storm.apache.org/documentation/Powered-By.html' title=''>http://storm.apache.org/documentation/Powered-By.html</a>.</p>
+
+<p>Kaptein, Maurits. 2013. <em>RStorm: Simulate and Develop Streaming Processing in [R]</em>. <a href='\url{http://CRAN.R-project.org/package=RStorm}' title=''>\url{http://CRAN.R-project.org/package=RStorm}</a>.</p>
+
+<p>Noll, Michael G. 2015. “Wirbelsturm.” <a href='http://github.com/miguno/wirbelsturm' title=''>http://github.com/miguno/wirbelsturm</a>.</p></div></article></slide>
 
 
   <slide class="backdrop"></slide>

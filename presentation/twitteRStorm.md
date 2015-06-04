@@ -2,6 +2,8 @@
 Doug Raffle  
 6/13/2015  
 
+
+
 ## Topics
 
 - Streaming Data
@@ -84,7 +86,66 @@ To aggregate results, bolts can also read from and write to more persistent data
 - Hash Maps
 - Databases
 
-## The Topology
+## The Topology Visualized
+<img style="width: 800px; height: 500px; float: center;" src="storm_topology.png">
+
+## Getting Storm Running
+So how do we get Storm up-and-running?
+
+- Storm is a complex framework with many dependencies
+- Requires a data engineering team to implement at scale
+- Even a local set up is time consuming and requires a fair amount of technical knowledge
+
+Is there a Vagrant box?
+
+- Wirbelsturm [@wirbel]
+
+## Developing Topologies
+What language do we use to create topologies?  It depends.
+
+Spouts
+
+- Written in a Java Virtual Machine language (JVM), e.g. Java, Clojure, Scala
+
+Bolts
+
+- Each one is a separate source file
+- Can be written in any language using the Multi-Language Protocol
+- Non-JVM languages (e.g. R, Python) must be wrapped in a JVM language
+
+Topology
+
+- Specified in YAML, packaged by Maven
+
+## RStorm
+Most statisticians and data scientists aren't fluent in JVM languages.  What do we do?
+
+The `RStorm` package [@rstorm] is designed to *simulate* a Storm topology.
+
+- `R` programmers can develop a topology in a familiar language
+- Organizations can evaluate whether or not Storm is appropriate for their project
+
+## RStorm
+RStorm is:
+
+- A simulation of Storm
+- A first draft or scratch pad
+
+RStorm is **not**:
+
+- An equivalent of Rhipe/RHadoop
+- A way of communicating with Storm through R
+- Used to write bolts that Storm can read
+
+## Case Study: Twitter
+You're a data scientist working for Comcast, and management wants to monitor tweets mentioning you company.  In particular, they want to:
+
+1. Keep track of common terms
+2. Keep track of positive and negative tweets (polarity)
+3. Know what topics associated with each polarity
+4. Track the polarity over time
+5. Track of the rate of tweets
+6. Have a dashboard for the marketing team to monitor, like [this](http://raffled.shinyapps.io/comcast_dash)
 
 ## References
 
