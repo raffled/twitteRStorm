@@ -96,12 +96,118 @@
 <slide class=''><hgroup><h2>Topics</h2></hgroup><article  id="topics">
 
 <ul>
+<li>Streaming Data</li>
 <li>The Storm Framework</li>
 <li>Storm Topologies</li>
 <li>Prototyping with <code>RStorm</code></li>
 <li>Case Study: Prototyping a Twitter Tracker</li>
 <li>Bridging the Gap: the <code>Storm</code> Package and the Multi-Language Protocol</li>
-</ul></article></slide>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Streaming Data</h2></hgroup><article  id="streaming-data">
+
+<p>What makes streaming data a special case?</p>
+
+<ul>
+<li>Information is constantly flowing</li>
+<li>Analysis/Models need to be able to update as new information comes in</li>
+<li>Deliverables are (often) time sensitive</li>
+<li>Data piles up quickly &#8211; Can&#39;t store everything</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Meet the Neighbors</h2></hgroup><article  id="meet-the-neighbors">
+
+<p>Hadoop and Spark:</p>
+
+<ul>
+<li>Distributed</li>
+<li>Fault Tolerant</li>
+<li>Scalable</li>
+<li>Designed to analyze static data in batches</li>
+<li>Run batch once, get results</li>
+</ul>
+
+<p>Spark has an answer for streaming data:</p>
+
+<ul>
+<li>Spark Streaming</li>
+<li>Works on &quot;micro-batches&quot; of data</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>What is Storm?</h2></hgroup><article  id="what-is-storm">
+
+<p>Storm <span class="cite">(“Apache Storm” 2015)</span>:</p>
+
+<ul>
+<li>Distributed</li>
+<li>Fault Tolerant</li>
+<li>Scalable</li>
+<li>Designed for streaming data</li>
+<li>Runs constantly, updates results as new data comes in</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Who uses Storm?</h2></hgroup><article  id="who-uses-storm">
+
+<p>Many companies you (probably) use every day <span class="cite">(“Companies Using Apache Storm” 2015)</span>:</p>
+
+<ul>
+<li>Twitter</li>
+<li>The Weather Channel</li>
+<li>Spotify</li>
+<li>Yahoo!</li>
+<li>WebMD</li>
+</ul>
+
+<p>What do they all have in common?</p>
+
+<ul>
+<li>New information constantly coming in</li>
+<li>Users who want speed and accuracy</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Storm Topologies</h2></hgroup><article  id="storm-topologies">
+
+<p>Storm frameworks are specified by &quot;topologies&quot; consisting of spouts and bolts.</p>
+
+<p><strong>Spouts:</strong></p>
+
+<ul>
+<li>Data sources, e.g., Twitter</li>
+<li>Every topology has at least one spout</li>
+</ul>
+
+<p><strong>Bolts:</strong></p>
+
+<ul>
+<li>Process individual pieces of data</li>
+<li>Receive data from spouts or other bolts</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Storm: Data Structures</h2></hgroup><article  id="storm-data-structures">
+
+<p>The basic data structure in Storm is a <strong>tuple</strong>.</p>
+
+<ul>
+<li>A key-value pair representing an observation</li>
+<li>Spouts <em>emit</em> tuples as new data comes in</li>
+<li>Bolts <em>consume</em> tuples, process them, and emit 0 or more new tuples to other bolts</li>
+</ul>
+
+<p>To aggregate results, bolts can also read from and write to more persistent data structures.</p>
+
+<ul>
+<li>Hash Maps</li>
+<li>Databases</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
+
+<div class="references">
+</article></slide><slide class=''><hgroup><h2>References</h2></hgroup><article  id="references" class="unnumbered">
+
+<p>“Apache Storm.” 2015. <a href='https://storm.apache.org/' title=''>https://storm.apache.org/</a>.</p>
+
+<p>“Companies Using Apache Storm.” 2015. <a href='http://storm.apache.org/documentation/Powered-By.html' title=''>http://storm.apache.org/documentation/Powered-By.html</a>.</p></div></article></slide>
 
 
   <slide class="backdrop"></slide>
