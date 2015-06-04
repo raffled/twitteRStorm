@@ -1,0 +1,10 @@
+---
+title: "twitteRStorm"
+subtitle: "Prototyping a Streaming Framework for Analyzing Tweets with Storm"
+author: "Doug Raffle"
+date: "6/13/2015"
+output: ioslides_presentation
+---
+
+
+
