@@ -1,10 +1,19 @@
 ---
 title: "twitteRStorm"
-subtitle: "Prototyping a Streaming Framework for Analyzing Tweets with Storm"
 author: "Doug Raffle"
 date: "6/13/2015"
-output: ioslides_presentation
+output:
+  ioslides_presentation:
+    keep_md: yes
+    widescreen: yes
+subtitle: Prototyping a Streaming Framework for Analyzing Tweets with Storm
 ---
 
+## Topics
 
+- The Storm Framework
+- Storm Topologies
+- Prototyping with `RStorm`
+- Case Study: Prototyping a Twitter Tracker
+- Bridging the Gap: the `Storm` Package and the Multi-Language Protocol
 
