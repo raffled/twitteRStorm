@@ -97,9 +97,9 @@ strip.stopwords <- function(tuple, ...){
 }
 topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 3, boltID = 4))
 
-count.words <- function(tuple, ...){
+get.word.counts <- function(tuple, ...){
     words <- unlist(strsplit(tuple$text, " "))
-    words.df <- GetHash("words.df")
+    words.df <- GetHash("word.counts.df")
     if(!is.data.frame(words.df)) words.df <- data.frame()
     sapply(words, function(word){
                if(word %in% words.df$word){
@@ -110,9 +110,9 @@ count.words <- function(tuple, ...){
                                      data.frame(word = word, count = 1))
                }
            }, USE.NAMES = FALSE)
-    SetHash("words.df", words.df)
+    SetHash("word.counts.df", words.df)
 }
-topo <- AddBolt(topo, Bolt(count.words, listen = 4, boltID = 5))
+topo <- AddBolt(topo, Bolt(get.word.counts, listen = 4, boltID = 5))
 
 get.polarity <- function(tuple, ...){
     polarity <- classify_polarity(tuple$text)[,4]
@@ -161,7 +161,7 @@ topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))
 system.time(result <- RStorm(topo))
 
 #### word cloud
-word.df <- GetHash("words.df", result)
+word.df <- GetHash("word.counts.df", result)
 words <- word.df$word
 counts <- word.df$count
 wordcloud(words, counts)
