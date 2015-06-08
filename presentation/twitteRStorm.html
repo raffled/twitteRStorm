@@ -165,6 +165,26 @@
 <li>Users who want speed and accuracy</li>
 </ul>
 
+</article></slide><slide class=''><hgroup><h2>The Storm Framework</h2></hgroup><article  id="the-storm-framework">
+
+<p>What makes up a storm framework?</p>
+
+<p>The <strong>Topology</strong> specifies:</p>
+
+<ul>
+<li>Where data comes from</li>
+<li>What gets down to each piece of data</li>
+<li>Where results are stored</li>
+</ul>
+
+<p>Once a topology is running:</p>
+
+<ul>
+<li>New data enters the topology as it arrives</li>
+<li>The topology extracts relevant information</li>
+<li>Applications or databases are updated</li>
+</ul>
+
 </article></slide><slide class=''><hgroup><h2>Storm Topologies</h2></hgroup><article  id="storm-topologies">
 
 <p>Storm frameworks are specified by &quot;topologies&quot; consisting of spouts and bolts.</p>
@@ -196,8 +216,8 @@
 <p>To aggregate results, bolts can also read from and write to more persistent data structures.</p>
 
 <ul>
-<li>Hash Maps</li>
-<li>Databases</li>
+<li>Hash Maps &#8211; quick, global storage internal to topology</li>
+<li>Databases &#8211; more persistant storage for outside applications</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>The Topology Visualized</h2></hgroup><article  id="the-topology-visualized">

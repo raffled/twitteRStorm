@@ -61,6 +61,21 @@ What do they all have in common?
 - New information constantly coming in
 - Users who want speed and accuracy
 
+## The Storm Framework
+What makes up a storm framework?
+
+The **Topology** specifies:
+
+- Where data comes from
+- What gets down to each piece of data
+- Where results are stored
+
+Once a topology is running:
+
+- New data enters the topology as it arrives
+- The topology extracts relevant information
+- Applications or databases are updated
+
 ## Storm Topologies
 Storm frameworks are specified by "topologies" consisting of spouts and bolts.
 
@@ -83,8 +98,8 @@ The basic data structure in Storm is a **tuple**.
 
 To aggregate results, bolts can also read from and write to more persistent data structures.
 
-- Hash Maps
-- Databases
+- Hash Maps -- quick, global storage internal to topology
+- Databases -- more persistant storage for outside applications
 
 ## The Topology Visualized
 <img style="width: 800px; height: 500px; float: center;" src="storm_topology.png">
