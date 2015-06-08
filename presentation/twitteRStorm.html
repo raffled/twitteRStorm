@@ -390,7 +390,8 @@
 
 </article></slide><slide class=''><hgroup><h2>The Spout</h2></hgroup><article  id="the-spout">
 
-<pre class = 'prettyprint lang-r'>(dat &lt;- data.frame(X = 1:5))</pre>
+<pre class = 'prettyprint lang-r'>library(RStorm)
+(dat &lt;- data.frame(X = 1:5))</pre>
 
 <pre >##   X
 ## 1 1
@@ -566,6 +567,62 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>Tweets per Minute (TPM) at each new tweet</li>
 <li>Polarity Percentages updated as tweets come in</li>
 </ul>
+
+</article></slide><slide class=''><hgroup><h2>Implementing the Twitter Stream</h2></hgroup><article  id="implementing-the-twitter-stream">
+
+<p>Implementing the stream is the topic of the tutorial, for now we will:</p>
+
+<ul>
+<li>Describe the topology</li>
+<li>Describe the bolts needed</li>
+<li>Describe the hashes and trackers</li>
+<li>Use the results</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
+
+<p><img style="width: 1000px; height: 550px; float: center;" src="my_topology.png"></p>
+
+</article></slide><slide class=''><hgroup><h2>The Bolts</h2></hgroup><article  id="the-bolts">
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left">Bolt</th>
+<th align="left">Purpose</th>
+</tr>
+<tr class="odd">
+<td align="left"><code>track.rate()</code></td>
+<td align="left">Calculate and track tweets per minute</td>
+</tr>
+<tr class="even">
+<td align="left"><code>get.text()</code></td>
+<td align="left">Extract text from tweet</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>clean.text()</code></td>
+<td align="left">Clean special characters, links, punctuation, etc.</td>
+</tr>
+<tr class="even">
+<td align="left"><code>strip.stopwords()</code></td>
+<td align="left">Clean conjunctions, prepositions, etc.</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>get.word.counts()</code></td>
+<td align="left">Create and update word counts</td>
+</tr>
+<tr class="even">
+<td align="left"><code>get.polarity()</code></td>
+<td align="left">Classify polarity of a tweet</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>track.polarity()</code></td>
+<td align="left">Track percentage of positive/negative/neutral tweets over time</td>
+</tr>
+<tr class="even">
+<td align="left"><code>store.words.polarity()</code></td>
+<td align="left">Store words for each polarity level</td>
+</tr>
+</table>
 
 <div class="references">
 </article></slide><slide class=''><hgroup><h2>References</h2></hgroup><article  id="references" class="unnumbered">

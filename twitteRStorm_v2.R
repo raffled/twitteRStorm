@@ -124,7 +124,7 @@ topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6))
 
 track.polarity <- function(tuple, ...){
     polarity.df <- GetHash("polarity.df")
-    if(!is.data.frame(prop.df)) polarity.df <- data.frame()
+    if(!is.data.frame(polarity.df)) polarity.df <- data.frame()
     polarity.df <- rbind(polarity.df,
                          data.frame(polarity = tuple$polarity))
     SetHash("polarity.df", polarity.df)
@@ -166,9 +166,6 @@ words <- word.df$word
 counts <- word.df$count
 wordcloud(words, counts)
     
-wordcloud(word.vec,
-          colors = brewer.pal(8, "Dark2"),
-          scale = c(4, 1))
 
 #### comparison cloud
 polar.words.df <- GetHash("polar.words.df", result)

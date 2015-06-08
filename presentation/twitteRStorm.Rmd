@@ -343,6 +343,33 @@ Trackers (write row-by-row):
 - Polarity Percentages updated as tweets come in
 
 ```{r, echo = FALSE}
+#### load packages for twitter, storm, etc
+library(RStorm)
+library(twitteR)
+library(sentiment)
+library(wordcloud)
+library(dplyr)
+library(tidyr)
+
+################################ Get Tweets ################################
+#### authorize API access
+## consumer.key <- "********"
+## consumer.secret <- "********"
+## access.token <- "********"
+## access.secret <- "********"
+## setup_twitter_oauth(consumer.key, consumer.secret,
+##                     access.token, access.secret)
+
+## source("twitterAuth.R") ## stored credentials doesn't seem to work,
+##                         ## hack around w/ authorization script
+
+## comcast.list <- searchTwitter("comcast", n = 1500, lang = "en")
+## comcast.df <- twListToDF(comcast.list)
+## head(comcast.df)
+## dim(comcast.df)
+## ## Reverse order to emulate streaming data
+## comcast.df <- comcast.df[order(comcast.df$created),]
+## save(comcast.df, file = "comcastTweetsDF.bin")
 load("../comcastTweetsDF.bin")  ## loads data.frame comcast.df
 
 ################################ Topology ################################
@@ -350,7 +377,7 @@ load("../comcastTweetsDF.bin")  ## loads data.frame comcast.df
 options(stringsAsFactors = FALSE)
 
 #### create the topology
-topo <- Topology(comcast.df[1:200,]) ## subset for testing
+topo <- Topology(comcast.df[1:200,], .verbose = FALSE) ## subset for testing
 
 #### Grabs the current time stamp, looks at recent time stamps, and
 #### calculates tweets per minute (tpm)
@@ -374,13 +401,13 @@ track.rate <- function(tuple, ...){
     }
     TrackRow("tpm.df", data.frame(tpm = tpm, t.stamp = t.stamp))
 }
-topo <- AddBolt(topo, Bolt(track.rate, listen = 0, boltID = 1))
+topo <- AddBolt(topo, Bolt(track.rate, listen = 0, boltID = 1), .verbose = FALSE)
 
 get.text <- function(tuple, ...){
     Emit(Tuple(data.frame(text = tuple$text,
                           t.stamp = tuple$created)), ...)
 }
-topo <- AddBolt(topo, Bolt(get.text, listen = 0, boltID = 2))
+topo <- AddBolt(topo, Bolt(get.text, listen = 0, boltID = 2), .verbose = FALSE)
 
 clean.text <- function(tuple, ...){
     text.clean <- tuple$text %>%
@@ -402,7 +429,7 @@ clean.text <- function(tuple, ...){
     names(text.clean) <- NULL ## needed to avoid RStorm missing name error?
     Emit(Tuple(data.frame(text = text.clean, t.stamp = tuple$t.stamp)), ...)
 }
-topo <- AddBolt(topo, Bolt(clean.text, listen = 2, boltID = 3))
+topo <- AddBolt(topo, Bolt(clean.text, listen = 2, boltID = 3), .verbose = FALSE)
 
 strip.stopwords <- function(tuple, ...){
     text.content <- removeWords(tuple$text,
@@ -413,7 +440,7 @@ strip.stopwords <- function(tuple, ...){
                               t.stamp = tuple$t.stamp)), ...)
     }
 }
-topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 3, boltID = 4))
+topo <- AddBolt(topo, Bolt(strip.stopwords, listen = 3, boltID = 4), .verbose = FALSE)
 
 get.word.counts <- function(tuple, ...){
     words <- unlist(strsplit(tuple$text, " "))
@@ -430,7 +457,7 @@ get.word.counts <- function(tuple, ...){
            }, USE.NAMES = FALSE)
     SetHash("word.counts.df", words.df)
 }
-topo <- AddBolt(topo, Bolt(get.word.counts, listen = 4, boltID = 5))
+topo <- AddBolt(topo, Bolt(get.word.counts, listen = 4, boltID = 5), .verbose = FALSE)
 
 get.polarity <- function(tuple, ...){
     polarity <- classify_polarity(tuple$text)[,4]
@@ -438,11 +465,11 @@ get.polarity <- function(tuple, ...){
                           t.stamp = tuple$t.stamp,
                           polarity = polarity)), ...)
 }
-topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6))
+topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6), .verbose = FALSE)
 
 track.polarity <- function(tuple, ...){
     polarity.df <- GetHash("polarity.df")
-    if(!is.data.frame(prop.df)) polarity.df <- data.frame()
+    if(!is.data.frame(polarity.df)) polarity.df <- data.frame()
     polarity.df <- rbind(polarity.df,
                          data.frame(polarity = tuple$polarity))
     SetHash("polarity.df", polarity.df)
@@ -455,7 +482,7 @@ track.polarity <- function(tuple, ...){
                           t.stamp = tuple$t.stamp)
     TrackRow("prop.df", prop.df)
 }
-topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))
+topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7), .verbose = FALSE)
 
 store.words.polarity <- function(tuple, ...){
     polar.words.df <- GetHash("polar.words.df")
@@ -473,52 +500,34 @@ store.words.polarity <- function(tuple, ...){
     }
     SetHash("polar.words.df", polar.words.df)
 }
-topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))
+topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8), .verbose = FALSE)
 
 #### get results
-system.time(result <- RStorm(topo))
-
-#### word cloud
-word.df <- GetHash("word.counts.df", result)
-words <- word.df$word
-counts <- word.df$count
-wordcloud(words, counts)
-    
-wordcloud(word.vec,
-          colors = brewer.pal(8, "Dark2"),
-          scale = c(4, 1))
-
-#### comparison cloud
-polar.words.df <- GetHash("polar.words.df", result)
-by.polar <- list(positive = polar.words.df["positive",][[1]],
-                 neutral = polar.words.df["neutral",][[1]],
-                 negative = polar.words.df["negative",][[1]])
-polar.corpus <- Corpus(VectorSource(by.polar))
-polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
-colnames(polar.doc.mat) <- rownames(polar.words.df)
-comparison.cloud(polar.doc.mat)
-
-#### timeplot of polarity
-prop.df <- GetTrack("prop.df", result)
-prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
-ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
-    geom_point() + geom_line() + theme(legend.position = "top")
-
-## timeplot of tweets per minute
-tpm.df <- GetTrack("tpm.df", result)
-ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + geom_point() +
-    geom_line()
-
-
-## set stringsAsFactors back for safety.
-options(stringsAsFactors = TRUE)
+result <- RStorm(topo)
 ```
 
 ## Implementing the Twitter Stream
-This is what we'll do in the tutorial. For now, assume we have these bolts:
+Implementing the stream is the topic of the tutorial, for now we will:
 
+- Describe the topology
+- Describe the bolts needed
+- Describe the hashes and trackers
+- Use the results
+
+## The Topology
+<img style="width: 1000px; height: 550px; float: center;" src="my_topology.png">
+
+## The Bolts
 Bolt | Purpose
-
+-----|-------------
+`track.rate()` | Calculate and track tweets per minute
+`get.text()` | Extract text from tweet
+`clean.text()` | Clean special characters, links, punctuation, etc.
+`strip.stopwords()` | Clean conjunctions, prepositions, etc.
+`get.word.counts()` | Create and update word counts
+`get.polarity()` | Classify polarity of a tweet
+`track.polarity()` | Track percentage of positive/negative/neutral tweets over time
+`store.words.polarity()` | Store words for each polarity level
 
 
 

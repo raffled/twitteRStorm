@@ -202,6 +202,7 @@ We will write a small sample topology to illustrate the ideas of `RStorm`
 ## The Spout
 
 ```r
+library(RStorm)
 (dat <- data.frame(X = 1:5))
 ```
 
@@ -372,6 +373,30 @@ Trackers (write row-by-row):
 - Tweets per Minute (TPM) at each new tweet
 - Polarity Percentages updated as tweets come in
 
+
+
+## Implementing the Twitter Stream
+Implementing the stream is the topic of the tutorial, for now we will:
+
+- Describe the topology
+- Describe the bolts needed
+- Describe the hashes and trackers
+- Use the results
+
+## The Topology
+<img style="width: 1000px; height: 550px; float: center;" src="my_topology.png">
+
+## The Bolts
+Bolt | Purpose
+-----|-------------
+`track.rate()` | Calculate and track tweets per minute
+`get.text()` | Extract text from tweet
+`clean.text()` | Clean special characters, links, punctuation, etc.
+`strip.stopwords()` | Clean conjunctions, prepositions, etc.
+`get.word.counts()` | Create and update word counts
+`get.polarity()` | Classify polarity of a tweet
+`track.polarity()` | Track percentage of positive/negative/neutral tweets over time
+`store.words.polarity()` | Store words for each polarity level
 
 
 
