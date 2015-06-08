@@ -217,12 +217,12 @@
 
 <ul>
 <li>Hash Maps &#8211; quick, global storage internal to topology</li>
-<li>Databases &#8211; more persistant storage for outside applications</li>
+<li>Databases &#8211; more persistent storage for outside applications</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>The Topology Visualized</h2></hgroup><article  id="the-topology-visualized">
 
-<p><img style="width: 800px; height: 500px; float: center;" src="storm_topology.png"></p>
+<p><img style="width: 1000px; height: 600px; float: center;" src="sample_topo.png"></p>
 
 </article></slide><slide class=''><hgroup><h2>Getting Storm Running</h2></hgroup><article  id="getting-storm-running">
 
@@ -237,7 +237,9 @@
 <p>Is there a Vagrant box?</p>
 
 <ul>
-<li>Wirbelsturm <span class="cite">(Noll 2015)</span></li>
+<li>Wirbelsturm <span class="cite">(Noll 2015)</span> - Germal for &quot;cyclone&quot;</li>
+<li>Comes pre-loaded, but not as user-friendly as Tessera boxes are for Hadoop/Spark</li>
+<li>No step-by-step tutorials</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Developing Topologies</h2></hgroup><article  id="developing-topologies">
@@ -247,7 +249,7 @@
 <p>Spouts</p>
 
 <ul>
-<li>Written in a Java Virtual Machine language (JVM), e.g. Java, Clojure, Scala</li>
+<li>Written in a Java Virtual Machine (JVM) languages, e.g. Java, Clojure, Scala</li>
 </ul>
 
 <p>Bolts</p>
@@ -255,7 +257,7 @@
 <ul>
 <li>Each one is a separate source file</li>
 <li>Can be written in any language using the Multi-Language Protocol</li>
-<li>Non-JVM languages (e.g. R, Python) must be wrapped in a JVM language</li>
+<li>Non-JVM languages (e.g. R, Python) must be wrapped in a JVM function</li>
 </ul>
 
 <p>Topology</p>
@@ -287,23 +289,283 @@
 <p>RStorm is <strong>not</strong>:</p>
 
 <ul>
-<li>An equivalent of Rhipe/RHadoop</li>
-<li>A way of communicating with Storm through R</li>
-<li>Used to write bolts that Storm can read</li>
+<li>An equivalent of <code>Rhipe</code>/<code>RHadoop</code>/<code>SparkR</code></li>
+<li>A way of communicating with Storm through <code>R</code></li>
+<li>Used to write bolts that Storm can read (though this is an eventual goal)</li>
 </ul>
+
+</article></slide><slide class=''><hgroup><h2><code>RStorm</code> Overview</h2></hgroup><article  id="rstorm-overview">
+
+<p><code>RStorm</code> works by simulating topologies with <code>R</code> functions and data frames</p>
+
+<ul>
+<li>A spout is simulated by a <code>data.frame</code>, observations are emitted sequentially by row</li>
+<li>A tuple is a one row <code>data.frame</code></li>
+<li>Bolts are functions which take a single tuple (<code>data.frame</code>) as input</li>
+<li>Storage is done exclusively in a hash map, where each record is a key-value pair where the key is a character string and the value is a <code>data.frame</code></li>
+<li>Hashes can be read/write from inside the topology, or &quot;trackers,&quot; which can only be written to row-by-row from within the topology</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Top-Level <code>RStorm</code> Functions</h2></hgroup><article  id="top-level-rstorm-functions">
+
+<p>These functions are used to specify the topology, run it, and get the results:</p>
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left">Function</th>
+<th align="left">Purpose</th>
+</tr>
+<tr class="odd">
+<td align="left"><code>Topology(spout, ...)</code></td>
+<td align="left">Creates a topology from a <code>data.frame</code></td>
+</tr>
+<tr class="even">
+<td align="left"><code>Bolt(FUNC, listen = 0, ...)</code></td>
+<td align="left">Creates a bolt from a function, <code>listen</code> specifies the source of tuples</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>AddBolt(topology, bolt, ...)</code></td>
+<td align="left">Adds a bolt to the topology</td>
+</tr>
+<tr class="even">
+<td align="left"><code>RStorm(topology, ...)</code></td>
+<td align="left">Runs a fully-specified topology</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>GetHash(name, topology)</code></td>
+<td align="left">Retrieves a hash from the finished topology</td>
+</tr>
+<tr class="even">
+<td align="left"><code>GetTrack(name, topology)</code></td>
+<td align="left">Retrieves a track from a completed topology</td>
+</tr>
+</table>
+
+</article></slide><slide class=''><hgroup><h2>Within-Bolt Functions</h2></hgroup><article  id="within-bolt-functions">
+
+<p>These functions are called within bolts to perform operations:</p>
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left">Function</th>
+<th align="left">Purpose</th>
+</tr>
+<tr class="odd">
+<td align="left"><code>Tuple(x, ...)</code></td>
+<td align="left">Generates a tuple from a one-row <code>data.frame</code></td>
+</tr>
+<tr class="even">
+<td align="left"><code>GetHash(name, ...)</code></td>
+<td align="left">Retreives a hash from within the topology</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>SetHash(name, data)</code></td>
+<td align="left">Saves a <code>data.frame</code> to the hash with key <code>name</code></td>
+</tr>
+<tr class="even">
+<td align="left"><code>TrackRow(name, data)</code></td>
+<td align="left">Row binds a one-row <code>data.frame</code> to a tracked <code>data.frame</code></td>
+</tr>
+<tr class="odd">
+<td align="left"><code>Emit(x, ...)</code></td>
+<td align="left">Emits a tuple from within a bolt</td>
+</tr>
+</table>
+
+</article></slide><slide class=''><hgroup><h2>Example: Summing Values</h2></hgroup><article  id="example-summing-values">
+
+<p>As a small example, consider the following:</p>
+
+<ul>
+<li>Observations coming in are numbers</li>
+<li>The final result is the sum of the numbers</li>
+<li>We want to track the sum over time</li>
+</ul>
+
+<p>We will write a small sample topology to illustrate the ideas of <code>RStorm</code></p>
+
+</article></slide><slide class=''><hgroup><h2>Example Topology</h2></hgroup><article  id="example-topology">
+
+<p><img style="width: 900px; height: 600px; float: center;" src="example_topo.png"></p>
+
+</article></slide><slide class=''><hgroup><h2>The Spout</h2></hgroup><article  id="the-spout">
+
+<pre class = 'prettyprint lang-r'>(dat &lt;- data.frame(X = 1:5))</pre>
+
+<pre >##   X
+## 1 1
+## 2 2
+## 3 3
+## 4 4
+## 5 5</pre>
+
+<pre class = 'prettyprint lang-r'>topology &lt;- Topology(dat)</pre>
+
+<pre >## Created a topology with a spout containing  5 rows.</pre>
+
+</article></slide><slide class=''><hgroup><h2>Bolt 1: Current Sum</h2></hgroup><article  id="bolt-1-current-sum">
+
+<pre class = 'prettyprint lang-r'>get.sum &lt;- function(tuple, ...){
+  current.val &lt;- tuple$X
+  
+  past.sum &lt;- GetHash(&quot;current.sum&quot;)
+  if(!is.data.frame(past.sum)) past.sum &lt;- data.frame(c.sum = 0)
+  
+  current.sum &lt;- past.sum$c.sum + current.val
+  SetHash(&quot;current.sum&quot;, data.frame(c.sum = current.sum))
+  Emit(Tuple(data.frame(c.sum = current.sum)), ...)
+}
+topology &lt;- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))</pre>
+
+<pre >## [1] &quot;Added bolt get.sum to position 1 which listens to 0&quot;</pre>
+
+</article></slide><slide class=''><hgroup><h2>Bolt 2: Track Sum</h2></hgroup><article  id="bolt-2-track-sum">
+
+<pre class = 'prettyprint lang-r'>track.sum &lt;- function(tuple, ...){
+  current.sum &lt;- tuple$c.sum
+  TrackRow(&quot;track.sum&quot;, data.frame(c.sum = current.sum))
+}
+topology &lt;- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))</pre>
+
+<pre >## [1] &quot;Added bolt track.sum to position 2 which listens to 1&quot;</pre>
+
+<pre class = 'prettyprint lang-r'>topology</pre>
+
+<pre >## Topology with a spout containing 5 rows 
+##  - Bolt ( 1 ): * get.sum * listens to 0 
+##  - Bolt ( 2 ): * track.sum * listens to 1 
+## No finalize function specified</pre>
+
+</article></slide><slide class=''><hgroup><h2>Get the Results</h2></hgroup><article  id="get-the-results">
+
+<pre class = 'prettyprint lang-r'>results &lt;- RStorm(topology)
+GetHash(&quot;current.sum&quot;, results)</pre>
+
+<pre >##   c.sum
+## 1    15</pre>
+
+<pre class = 'prettyprint lang-r'>t(GetTrack(&quot;track.sum&quot;, results))</pre>
+
+<pre >##       1 2 3  4  5
+## c.sum 1 3 6 10 15</pre>
 
 </article></slide><slide class=''><hgroup><h2>Case Study: Twitter</h2></hgroup><article  id="case-study-twitter">
 
-<p>You&#39;re a data scientist working for Comcast, and management wants to monitor tweets mentioning you company. In particular, they want to:</p>
+<p>You&#39;re a data scientist working for Comcast, and management wants to monitor tweets mentioning your company. In particular, they want to know:</p>
 
 <ol>
-<li>Keep track of common terms</li>
-<li>Keep track of positive and negative tweets (polarity)</li>
-<li>Know what topics associated with each polarity</li>
-<li>Track the polarity over time</li>
-<li>Track of the rate of tweets</li>
-<li>Have a dashboard for the marketing team to monitor, like <a href='http://raffled.shinyapps.io/comcast_dash' title=''>this</a></li>
+<li>What are people talking about?</li>
+<li>Are they saying positive or negative things?</li>
+<li>What are the common topics of the good and bad tweets?</li>
+<li>Can we track the percentage of good and bad tweets over time?</li>
+<li>Can you tell us when people start talking about us more?</li>
+<li>Can they have a dashboard for the marketing team to monitor, like <a href='http://raffled.shinyapps.io/comcast_dash' title=''>this</a>?</li>
 </ol>
+
+</article></slide><slide class=''><hgroup><h2>Twitter: Translating to Stats</h2></hgroup><article  id="twitter-translating-to-stats">
+
+<p>First, we need to translate the requests to techniques and visualizations.</p>
+
+<p>What are people talking about?</p>
+
+<ul>
+<li>Word frequencies \(\to\) wordclouds</li>
+</ul>
+
+<p>Are they saying positive or negative things?</p>
+
+<ul>
+<li>Classify the polarity (sentiment analysis)</li>
+</ul>
+
+<p>What are common topics of good and bad tweets?</p>
+
+<ul>
+<li>Word frequencies by polarity \(\to\) comparison clouds</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Twitter: Translating to Stats</h2></hgroup><article  id="twitter-translating-to-stats-1">
+
+<p>Can we track the percentage of good and bad tweets over time?</p>
+
+<ul>
+<li>Track percent of each polarity classification over time \(\to\) timeplots</li>
+</ul>
+
+<p>Can you tell us when people start talking about us more?</p>
+
+<ul>
+<li>Track rate of tweets \(\to\) timeplot</li>
+</ul>
+
+<p>Can they get a dashboard?</p>
+
+<ul>
+<li><code>shinydash</code>, Tableau, or Javascript</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Twitter: Which Platform?</h2></hgroup><article  id="twitter-which-platform">
+
+<p><strong>Small \(n\), not time sensitive</strong></p>
+
+<ul>
+<li>Batch processing in <code>R</code> by day or week is probably good enough</li>
+</ul>
+
+<p><strong>Small \(n\), time sensitive</strong></p>
+
+<ul>
+<li>We can probably get away with an automated script and writing to a file/data base from within <code>R</code></li>
+</ul>
+
+<p><strong>Large \(n\), not time sensitive</strong></p>
+
+<ul>
+<li>Hadoop or Spark batches run daily or weekly</li>
+</ul>
+
+<p><strong>Large \(n\), time sensitive</strong></p>
+
+<ul>
+<li>Storm (or Spark Streaming). Assume this is the case.</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Prototyping the Stream</h2></hgroup><article  id="prototyping-the-stream">
+
+<p>For our stream, we&#39;ll need:</p>
+
+<ul>
+<li>A <code>data.frame</code> of tweets for a spout</li>
+</ul>
+
+<p>Bolts to:</p>
+
+<ul>
+<li>Track the rate of tweets using their time stamps</li>
+<li>Clean the text for sentiment analysis and word counts</li>
+<li>Count the words for the word cloud</li>
+<li>Classify the polarity</li>
+<li>Calculate the polarity over time</li>
+<li>Keep track of the words used in each polarity class</li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>Hashes</h2></hgroup><article  id="hashes">
+
+<p>To store the tweets and track the information we need, we&#39;ll need hashes and trackers.</p>
+
+<p>Hashes (read/write):</p>
+
+<ul>
+<li>Word Counts</li>
+<li>Polarity of each tweet</li>
+</ul>
+
+<p>Trackers (write row-by-row):</p>
+
+<ul>
+<li>Tweets per Minute (TPM) at each new tweet</li>
+<li>Polarity Percentages updated as tweets come in</li>
+</ul>
 
 <div class="references">
 </article></slide><slide class=''><hgroup><h2>References</h2></hgroup><article  id="references" class="unnumbered">

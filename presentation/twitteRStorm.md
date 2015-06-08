@@ -99,10 +99,10 @@ The basic data structure in Storm is a **tuple**.
 To aggregate results, bolts can also read from and write to more persistent data structures.
 
 - Hash Maps -- quick, global storage internal to topology
-- Databases -- more persistant storage for outside applications
+- Databases -- more persistent storage for outside applications
 
 ## The Topology Visualized
-<img style="width: 800px; height: 500px; float: center;" src="storm_topology.png">
+<img style="width: 1000px; height: 600px; float: center;" src="sample_topo.png">
 
 ## Getting Storm Running
 So how do we get Storm up-and-running?
@@ -113,20 +113,22 @@ So how do we get Storm up-and-running?
 
 Is there a Vagrant box?
 
-- Wirbelsturm [@wirbel]
+- Wirbelsturm [@wirbel] - Germal for "cyclone"
+- Comes pre-loaded, but not as user-friendly as Tessera boxes are for Hadoop/Spark
+- No step-by-step tutorials
 
 ## Developing Topologies
 What language do we use to create topologies?  It depends.
 
 Spouts
 
-- Written in a Java Virtual Machine language (JVM), e.g. Java, Clojure, Scala
+- Written in a Java Virtual Machine (JVM) languages, e.g. Java, Clojure, Scala
 
 Bolts
 
 - Each one is a separate source file
 - Can be written in any language using the Multi-Language Protocol
-- Non-JVM languages (e.g. R, Python) must be wrapped in a JVM language
+- Non-JVM languages (e.g. R, Python) must be wrapped in a JVM function
 
 Topology
 
@@ -148,19 +150,230 @@ RStorm is:
 
 RStorm is **not**:
 
-- An equivalent of Rhipe/RHadoop
-- A way of communicating with Storm through R
-- Used to write bolts that Storm can read
+- An equivalent of `Rhipe`/`RHadoop`/`SparkR`
+- A way of communicating with Storm through `R`
+- Used to write bolts that Storm can read (though this is an eventual goal)
+
+## `RStorm` Overview
+`RStorm` works by simulating topologies with `R` functions and data frames
+
+- A spout is simulated by a `data.frame`, observations are emitted sequentially by row
+- A tuple is a one row `data.frame`
+- Bolts are functions which take a single tuple (`data.frame`) as input
+- Storage is done exclusively in a hash map, where each record is a key-value pair where the key is a character string and the value is a `data.frame`
+- Hashes can be read/write from inside the topology, or "trackers," which can only be written to row-by-row from within the topology
+
+## Top-Level `RStorm` Functions
+These functions are used to specify the topology, run it, and get the results:
+
+Function | Purpose
+---------|------------
+`Topology(spout, ...)` | Creates a topology from a `data.frame`
+`Bolt(FUNC, listen = 0, ...)` | Creates a bolt from a function, `listen` specifies the source of tuples
+`AddBolt(topology, bolt, ...)` | Adds a bolt to the topology
+`RStorm(topology, ...)` | Runs a fully-specified topology
+`GetHash(name, topology)` | Retrieves a hash from the finished topology
+`GetTrack(name, topology)` | Retrieves a track from a completed topology
+
+## Within-Bolt Functions
+These functions are called within bolts to perform operations:
+
+Function | Purpose
+---------|--------------
+`Tuple(x, ...)` | Generates a tuple from a one-row `data.frame`
+`GetHash(name, ...)` | Retreives a hash from within the topology
+`SetHash(name, data)` | Saves a `data.frame` to the hash with key `name`
+`TrackRow(name, data)`| Row binds a one-row `data.frame` to a tracked `data.frame`
+`Emit(x, ...)` | Emits a tuple from within a bolt
+
+## Example: Summing Values
+As a small example, consider the following:
+
+- Observations coming in are numbers
+- The final result is the sum of the numbers
+- We want to track the sum over time
+
+We will write a small sample topology to illustrate the ideas of `RStorm`
+
+## Example Topology
+<img style="width: 900px; height: 600px; float: center;" src="example_topo.png">
+
+
+## The Spout
+
+```r
+(dat <- data.frame(X = 1:5))
+```
+
+```
+##   X
+## 1 1
+## 2 2
+## 3 3
+## 4 4
+## 5 5
+```
+
+```r
+topology <- Topology(dat)
+```
+
+```
+## Created a topology with a spout containing  5 rows.
+```
+
+## Bolt 1: Current Sum
+
+```r
+get.sum <- function(tuple, ...){
+  current.val <- tuple$X
+  
+  past.sum <- GetHash("current.sum")
+  if(!is.data.frame(past.sum)) past.sum <- data.frame(c.sum = 0)
+  
+  current.sum <- past.sum$c.sum + current.val
+  SetHash("current.sum", data.frame(c.sum = current.sum))
+  Emit(Tuple(data.frame(c.sum = current.sum)), ...)
+}
+topology <- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))
+```
+
+```
+## [1] "Added bolt get.sum to position 1 which listens to 0"
+```
+
+## Bolt 2: Track Sum
+
+```r
+track.sum <- function(tuple, ...){
+  current.sum <- tuple$c.sum
+  TrackRow("track.sum", data.frame(c.sum = current.sum))
+}
+topology <- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))
+```
+
+```
+## [1] "Added bolt track.sum to position 2 which listens to 1"
+```
+
+```r
+topology
+```
+
+```
+## Topology with a spout containing 5 rows 
+##  - Bolt ( 1 ): * get.sum * listens to 0 
+##  - Bolt ( 2 ): * track.sum * listens to 1 
+## No finalize function specified
+```
+
+## Get the Results
+
+```r
+results <- RStorm(topology)
+GetHash("current.sum", results)
+```
+
+```
+##   c.sum
+## 1    15
+```
+
+```r
+t(GetTrack("track.sum", results))
+```
+
+```
+##       1 2 3  4  5
+## c.sum 1 3 6 10 15
+```
 
 ## Case Study: Twitter
-You're a data scientist working for Comcast, and management wants to monitor tweets mentioning you company.  In particular, they want to:
+You're a data scientist working for Comcast, and management wants to monitor tweets mentioning your company.  In particular, they want to know:
 
-1. Keep track of common terms
-2. Keep track of positive and negative tweets (polarity)
-3. Know what topics associated with each polarity
-4. Track the polarity over time
-5. Track of the rate of tweets
-6. Have a dashboard for the marketing team to monitor, like [this](http://raffled.shinyapps.io/comcast_dash)
+1. What are people talking about?
+2. Are they saying positive or negative things?
+3. What are the common topics of the good and bad tweets?
+4. Can we track the percentage of good and bad tweets over time?
+5. Can you tell us when people start talking about us more?
+6. Can they have a dashboard for the marketing team to monitor, like [this](http://raffled.shinyapps.io/comcast_dash)?
+
+## Twitter: Translating to Stats
+First, we need to translate the requests to techniques and visualizations.
+
+What are people talking about?
+
+- Word frequencies $\to$ wordclouds
+
+Are they saying positive or negative things?
+
+- Classify the polarity (sentiment analysis)
+
+What are common topics of good and bad tweets?
+
+- Word frequencies by polarity $\to$ comparison clouds
+
+## Twitter: Translating to Stats
+
+Can we track the percentage of good and bad tweets over time?
+
+- Track percent of each polarity classification over time $\to$ timeplots
+
+Can you tell us when people start talking about us more?
+
+- Track rate of tweets $\to$ timeplot
+
+Can they get a dashboard?
+
+- `shinydash`, Tableau, or Javascript
+
+## Twitter: Which Platform?
+
+**Small $n$, not time sensitive**
+
+- Batch processing in `R` by day or week is probably good enough
+
+**Small $n$, time sensitive**
+
+- We can probably get away with an automated script and writing to a file/data base from within `R`
+
+**Large $n$, not time sensitive**
+
+- Hadoop or Spark batches run daily or weekly
+
+**Large $n$, time sensitive**
+
+- Storm (or Spark Streaming).  Assume this is the case.
+
+## Prototyping the Stream
+For our stream, we'll need:
+
+- A `data.frame` of tweets for a spout
+
+Bolts to:
+
+- Track the rate of tweets using their time stamps
+- Clean the text for sentiment analysis and word counts
+- Count the words for the word cloud
+- Classify the polarity
+- Calculate the polarity over time
+- Keep track of the words used in each polarity class
+
+## Hashes
+To store the tweets and track the information we need, we'll need hashes and trackers.
+
+Hashes (read/write):
+
+- Word Counts
+- Polarity of each tweet
+
+Trackers (write row-by-row):
+
+- Tweets per Minute (TPM) at each new tweet
+- Polarity Percentages updated as tweets come in
+
+
+
 
 ## References
 
