@@ -49,7 +49,7 @@ track.rate <- function(tuple, ...){
     last.min <- t.stamp - 60
     ## get tpm if we're a minute into the stream
     if(last.min >= min(t.stamp.past)){
-        in.last.min <-  (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp.current)
+        in.last.min <-  (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp)
         tpm <- length(t.stamp.past[in.last.min])
     } else {
         tpm <- length(t.stamp.past)
