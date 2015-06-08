@@ -504,6 +504,7 @@ topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8), .verbo
 
 #### get results
 result <- RStorm(topo)
+options(stringsAsFactors = TRUE)
 ```
 
 ## Implementing the Twitter Stream
@@ -515,12 +516,12 @@ Implementing the stream is the topic of the tutorial, for now we will:
 - Use the results
 
 ## The Topology
-<img style="width: 1000px; height: 550px; float: center;" src="my_topology.png">
+<img style="width: 750px; float: center;" src="my_topology.png">
 
 ## The Bolts
 Bolt | Purpose
 -----|-------------
-`track.rate()` | Calculate and track tweets per minute
+`track.rate()` | Calculate and track tweets per minute over time
 `get.text()` | Extract text from tweet
 `clean.text()` | Clean special characters, links, punctuation, etc.
 `strip.stopwords()` | Clean conjunctions, prepositions, etc.
@@ -528,6 +529,71 @@ Bolt | Purpose
 `get.polarity()` | Classify polarity of a tweet
 `track.polarity()` | Track percentage of positive/negative/neutral tweets over time
 `store.words.polarity()` | Store words for each polarity level
+
+## Data Frames
+
+`data.frame` | Role | Description
+-------------|------|---------------
+`comcast.df` | Spout | Table to simulate tweets 
+`word.counts.df` | Hash | Stores word frequencies
+`t.stamp.df` | Hash | Store unique time stamps
+`tpm.df` | Tracker | Track tweets per minute over time
+`prop.df` | Tracker | Track percentage per polarity over time
+`polarity.df` | Hash | Store polarity per tweet
+`polar.words.df` | Hash | Keep track of words associated with each polarity
+
+## Running the Topology
+```{r}
+topo
+```
+```{r, eval = FALSE}
+result <- RStorm(topo)
+```
+
+## Analyzing the Results
+To analyze the results we need to:
+
+- Read `word.counts.df` and make a wordcloud
+- Read `polar.words.df` and make a comparison cloud
+- Read `tpm.df` and make a timeplot
+- Read `prop.df` and make a timeplot
+
+We will see the code for this in the tutorial, but for now we'll just look at the plots
+
+## Wordcloud
+```{r, echo = FALSE}
+word.df <- GetHash("word.counts.df", result)
+words <- word.df$word
+counts <- word.df$count
+wordcloud(words, counts)
+```
+
+## Comparison Cloud
+```{r, echo = FALSE}
+polar.words.df <- GetHash("polar.words.df", result)
+by.polar <- list(positive = polar.words.df["positive",][[1]],
+                 neutral = polar.words.df["neutral",][[1]],
+                 negative = polar.words.df["negative",][[1]])
+polar.corpus <- Corpus(VectorSource(by.polar))
+polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
+colnames(polar.doc.mat) <- rownames(polar.words.df)
+comparison.cloud(polar.doc.mat)
+```
+
+## Polarity over Time
+```{r, echo = FALSE}
+prop.df <- GetTrack("prop.df", result)
+prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
+ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
+    geom_point() + geom_line() + theme(legend.position = "top") + this.theme
+```
+
+## Tweet Rate over Time
+```{r, echo = FALSE}
+tpm.df <- GetTrack("tpm.df", result)
+ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + geom_point() +
+    geom_line() + this.theme
+```
 
 
 

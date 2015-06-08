@@ -384,12 +384,12 @@ Implementing the stream is the topic of the tutorial, for now we will:
 - Use the results
 
 ## The Topology
-<img style="width: 1000px; height: 550px; float: center;" src="my_topology.png">
+<img style="width: 750px; float: center;" src="my_topology.png">
 
 ## The Bolts
 Bolt | Purpose
 -----|-------------
-`track.rate()` | Calculate and track tweets per minute
+`track.rate()` | Calculate and track tweets per minute over time
 `get.text()` | Extract text from tweet
 `clean.text()` | Clean special characters, links, punctuation, etc.
 `strip.stopwords()` | Clean conjunctions, prepositions, etc.
@@ -397,6 +397,63 @@ Bolt | Purpose
 `get.polarity()` | Classify polarity of a tweet
 `track.polarity()` | Track percentage of positive/negative/neutral tweets over time
 `store.words.polarity()` | Store words for each polarity level
+
+## Data Frames
+
+`data.frame` | Role | Description
+-------------|------|---------------
+`comcast.df` | Spout | Table to simulate tweets 
+`word.counts.df` | Hash | Stores word frequencies
+`t.stamp.df` | Hash | Store unique time stamps
+`tpm.df` | Tracker | Track tweets per minute over time
+`prop.df` | Tracker | Track percentage per polarity over time
+`polarity.df` | Hash | Store polarity per tweet
+`polar.words.df` | Hash | Keep track of words associated with each polarity
+
+## Running the Topology
+
+```r
+topo
+```
+
+```
+## Topology with a spout containing 200 rows 
+##  - Bolt ( 1 ): * track.rate * listens to 0 
+##  - Bolt ( 2 ): * get.text * listens to 0 
+##  - Bolt ( 3 ): * clean.text * listens to 2 
+##  - Bolt ( 4 ): * strip.stopwords * listens to 3 
+##  - Bolt ( 5 ): * get.word.counts * listens to 4 
+##  - Bolt ( 6 ): * get.polarity * listens to 4 
+##  - Bolt ( 7 ): * track.polarity * listens to 6 
+##  - Bolt ( 8 ): * store.words.polarity * listens to 6 
+## No finalize function specified
+```
+
+```r
+result <- RStorm(topo)
+```
+
+## Analyzing the Results
+To analyze the results we need to:
+
+- Read `word.counts.df` and make a wordcloud
+- Read `polar.words.df` and make a comparison cloud
+- Read `tpm.df` and make a timeplot
+- Read `prop.df` and make a timeplot
+
+We will see the code for this in the tutorial, but for now we'll just look at the plots
+
+## Wordcloud
+<img src="twitteRStorm_files/figure-html/unnamed-chunk-8-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+## Comparison Cloud
+<img src="twitteRStorm_files/figure-html/unnamed-chunk-9-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+## Polarity over Time
+<img src="twitteRStorm_files/figure-html/unnamed-chunk-10-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+## Tweet Rate over Time
+<img src="twitteRStorm_files/figure-html/unnamed-chunk-11-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
 
