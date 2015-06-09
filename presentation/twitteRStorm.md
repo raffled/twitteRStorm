@@ -367,6 +367,7 @@ Hashes (read/write):
 
 - Word Counts
 - Polarity of each tweet
+- Words associated with each polarity
 
 Trackers (write row-by-row):
 
@@ -381,7 +382,15 @@ Implementing the stream is the topic of the tutorial, for now we will:
 - Describe the topology
 - Describe the bolts needed
 - Describe the hashes and trackers
-- Use the results
+- Discuss the results
+
+## Getting Tweets
+Since `RStorm` needs a `data.frame` as input, how do we get tweets?
+
+- Twitter's REST APIs [@rest] search recent tweets by keyword, location, timeframe, etc.
+- Only has access to a few days worth of tweets
+- Tweets for this example were pulled May 27, right after Time Warner Cable and Charter announced their merger
+- We will discuss the REST APIs in more detail during the tutorial
 
 ## The Topology
 <img style="width: 750px; float: center;" src="my_topology.png">
@@ -455,6 +464,88 @@ We will see the code for this in the tutorial, but for now we'll just look at th
 ## Tweet Rate over Time
 <img src="twitteRStorm_files/figure-html/unnamed-chunk-11-1.png" title="" alt="" style="display: block; margin: auto;" />
 
+## Bridging the Gap
+`RStorm` can't interface directly with Storm.  Instead, we use it to prototype streams.
+
+What if we decide to implement our topology in Storm?
+
+- Tuples are passed to non-JVM languages using Storm's Multi-Language Protocol (MLP)
+- The MLP is just a JSON-like format for storing tuples
+- Tuples are passed using standard input/output (*a la* Hadoop)
+
+The `R` package `Storm` [@stormr]:
+
+- Can read tuples in MLP from standard input
+- Emits new tuples in MLP to standard output
+
+## The MLP
+Say we wanted to write a simple bolt which took a sentence and split it into individual words.  What would the sentence tuple look like in the MLP?
+
+```
+{
+  "id": "-6955786537413359385",
+  "comp": "1",
+  "stream": "1",
+  "task": 9,
+  "tuple": [1, "snow white and the seven dwarfs"]
+}
+end
+```
+
+A `Storm` object in R will expect input of this format, and the package `Storm` includes basic utility functions for accessing information and processing bolts.
+
+## `Storm` Bolt
+
+```r
+## bolt.R
+## Load Storm Library
+library(Storm)
+## create the Storm object
+storm <- Storm$new()
+## create bolt function
+storm$lambda <- function(s){
+    tuple <- s$tuple
+    words <- unlist(strsplit(as.character(tuple$input[2]), " "))
+    sapply(words, function(word){
+               tuple$output <- vector("character", 1)
+               tuple$output[1] <- word
+               s$emit(tuple)
+           })
+}
+storm$run()
+```
+
+## Using a `Storm` Bolt
+In Storm, a bolt written in a JVM language would call your `R` script containing the bolt code.  
+
+Because Storm uses standard I/O for the MLP, you can simulate in a shell.
+```shell
+$ cat tuple.txt | Rscript bolt.R
+{"command": "emit", "anchors": ["-6955786537413359385"], "tuple": "snow"}
+end
+{"command": "emit", "anchors": ["-6955786537413359385"], "tuple": "white"}
+end
+{"command": "emit", "anchors": ["-6955786537413359385"], "tuple": "and"}
+end
+{"command": "emit", "anchors": ["-6955786537413359385"], "tuple": "the"}
+end
+{"command": "emit", "anchors": ["-6955786537413359385"], "tuple": "seven"}
+end
+{"command": "emit", "anchors": ["-6955786537413359385"], "tuple": "dwarfs"}
+end
+```
+
+## Bridging the Gap
+For `RStorm`, we used the REST APIs to grab recent tweets.
+
+In a live Storm environment, we'll need to process tweets as they come.
+
+- Twitter's Streaming APIs [@streaming] offer an "always on" connection to Twitter
+- We can filter and search by keyword, location, etc. just like with the REST APIs
+- Storm can use Twitter as a spout using these APIs
+
+
+## Tutorial
 
 
 ## References
