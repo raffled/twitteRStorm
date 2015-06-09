@@ -28,7 +28,7 @@ library(tidyr)
 load("comcastTweetsDF.bin")  ## loads data.frame comcast.df
 
 ################################ Topology ################################
-#### Saves some pain with working with strings in bols
+#### Saves some pain with working with strings in bolts
 options(stringsAsFactors = FALSE)
 
 #### create the topology
