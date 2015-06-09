@@ -554,6 +554,14 @@ In a live Storm environment, we'll need to process tweets as they come.
 
 
 ## Tutorial
+Source files on Github: 
+
+[https://github.com/raffled/twitteRStorm/tree/master/tutorial](https://github.com/raffled/twitteRStorm/tree/master/tutorial)
+
+Rendered HTML:
+
+[stat.wvu.edu/~draffle/twitteRStorm_tutorial.html](http://stat.wvu.edu/~draffle/twitteRStorm_tutorial.html)
+
 
 
 ## References
