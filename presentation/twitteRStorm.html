@@ -102,6 +102,7 @@
 <li>Prototyping with <code>RStorm</code></li>
 <li>Case Study: Prototyping a Twitter Tracker</li>
 <li>Bridging the Gap: the <code>Storm</code> Package and the Multi-Language Protocol</li>
+<li>Bridging the Gap: Twitter Streaming APIs</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Streaming Data</h2></hgroup><article  id="streaming-data">
@@ -110,7 +111,7 @@
 
 <ul>
 <li>Information is constantly flowing</li>
-<li>Analysis/Models need to be able to update as new information comes in</li>
+<li>Analysis/Models need to update as new information comes in</li>
 <li>Deliverables are (often) time sensitive</li>
 <li>Data piles up quickly &#8211; Can&#39;t store everything</li>
 </ul>
@@ -173,7 +174,7 @@
 
 <ul>
 <li>Where data comes from</li>
-<li>What gets down to each piece of data</li>
+<li>How we process each datum</li>
 <li>Where results are stored</li>
 </ul>
 
@@ -182,12 +183,13 @@
 <ul>
 <li>New data enters the topology as it arrives</li>
 <li>The topology extracts relevant information</li>
+<li>Each datum is processed</li>
 <li>Applications or databases are updated</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Storm Topologies</h2></hgroup><article  id="storm-topologies">
 
-<p>Storm frameworks are specified by &quot;topologies&quot; consisting of spouts and bolts.</p>
+<p>Storm frameworks are specified by <em>topologies</em> consisting of spouts and bolts.</p>
 
 <p><strong>Spouts:</strong></p>
 
@@ -201,6 +203,8 @@
 <ul>
 <li>Process individual pieces of data</li>
 <li>Receive data from spouts or other bolts</li>
+<li>Send data to other bolts</li>
+<li>Store results in a database</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Storm: Data Structures</h2></hgroup><article  id="storm-data-structures">
@@ -208,7 +212,7 @@
 <p>The basic data structure in Storm is a <strong>tuple</strong>.</p>
 
 <ul>
-<li>A key-value pair representing an observation</li>
+<li>A key-value pair representing an observation (<em>a la</em> Hadoop/Spark)</li>
 <li>Spouts <em>emit</em> tuples as new data comes in</li>
 <li>Bolts <em>consume</em> tuples, process them, and emit 0 or more new tuples to other bolts</li>
 </ul>
@@ -216,8 +220,8 @@
 <p>To aggregate results, bolts can also read from and write to more persistent data structures.</p>
 
 <ul>
-<li>Hash Maps &#8211; quick, global storage internal to topology</li>
-<li>Databases &#8211; more persistent storage for outside applications</li>
+<li>Hash Maps &#8211; quick, global storage, internal to topology</li>
+<li>Databases &#8211; more persistent storage, accessible by outside applications</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>The Topology Visualized</h2></hgroup><article  id="the-topology-visualized">
@@ -230,7 +234,7 @@
 
 <ul>
 <li>Storm is a complex framework with many dependencies</li>
-<li>Requires a data engineering team to implement at scale</li>
+<li>Usually requires a data engineering team to implement at scale</li>
 <li>Even a local set up is time consuming and requires a fair amount of technical knowledge</li>
 </ul>
 
@@ -244,7 +248,7 @@
 
 </article></slide><slide class=''><hgroup><h2>Developing Topologies</h2></hgroup><article  id="developing-topologies">
 
-<p>What language do we use to create topologies? It depends.</p>
+<p>Once Spark is installed, what language do we use to create topologies?</p>
 
 <p>Spouts</p>
 
@@ -291,19 +295,20 @@
 <ul>
 <li>An equivalent of <code>Rhipe</code>/<code>RHadoop</code>/<code>SparkR</code></li>
 <li>A way of communicating with Storm through <code>R</code></li>
-<li>Used to write bolts that Storm can read (though this is an eventual goal)</li>
+<li>Used to write bolts that Storm can read (yet)</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2><code>RStorm</code> Overview</h2></hgroup><article  id="rstorm-overview">
 
-<p><code>RStorm</code> works by simulating topologies with <code>R</code> functions and data frames</p>
+<p><code>RStorm</code> works by simulating topologies with <code>R</code> functions and <code>data.frames</code></p>
 
 <ul>
 <li>A spout is simulated by a <code>data.frame</code>, observations are emitted sequentially by row</li>
 <li>A tuple is a one row <code>data.frame</code></li>
 <li>Bolts are functions which take a single tuple (<code>data.frame</code>) as input</li>
-<li>Storage is done exclusively in a hash map, where each record is a key-value pair where the key is a character string and the value is a <code>data.frame</code></li>
-<li>Hashes can be read/write from inside the topology, or &quot;trackers,&quot; which can only be written to row-by-row from within the topology</li>
+<li>Storage is done exclusively in a hash map, where each record is a key-value pair of the form (<code>name</code>, <code>data.frame</code>)</li>
+<li>Hashes can be read/written from inside the topology</li>
+<li>&quot;Trackers&quot; can only be written to row-by-row from within the topology</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Top-Level <code>RStorm</code> Functions</h2></hgroup><article  id="top-level-rstorm-functions">
@@ -557,6 +562,7 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <p>Hashes (read/write):</p>
 
 <ul>
+<li>Each tweet&#39;s time stamp</li>
 <li>Word Counts</li>
 <li>Polarity of each tweet</li>
 <li>Words associated with each polarity</li>
@@ -577,7 +583,7 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>Describe the topology</li>
 <li>Describe the bolts needed</li>
 <li>Describe the hashes and trackers</li>
-<li>Discuss the results</li>
+<li>View the results</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Getting Tweets</h2></hgroup><article  id="getting-tweets">
@@ -585,15 +591,12 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <p>Since <code>RStorm</code> needs a <code>data.frame</code> as input, how do we get tweets?</p>
 
 <ul>
-<li>Twitter&#39;s REST APIs <span class="cite">(Twitter 2015a)</span> search recent tweets by keyword, location, timeframe, etc.</li>
+<li><code>R</code> package <code>twitteR</code> can access Twitter&#39;s REST APIs <span class="cite">(Twitter 2015a)</span></li>
+<li>Can search recent tweets by keyword, location, timeframe, etc.</li>
 <li>Only has access to a few days worth of tweets</li>
 <li>Tweets for this example were pulled May 27, right after Time Warner Cable and Charter announced their merger</li>
 <li>We will discuss the REST APIs in more detail during the tutorial</li>
 </ul>
-
-</article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
-
-<p><img style="width: 750px; float: center;" src="my_topology.png"></p>
 
 </article></slide><slide class=''><hgroup><h2>The Bolts</h2></hgroup><article  id="the-bolts">
 
@@ -680,6 +683,10 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <td align="left">Keep track of words associated with each polarity</td>
 </tr>
 </table>
+
+</article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
+
+<p><img style="width: 1000px; height: 600px; float: center;" src="my_topology.png"></p>
 
 </article></slide><slide class=''><hgroup><h2>Running the Topology</h2></hgroup><article  id="running-the-topology">
 

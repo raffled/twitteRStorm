@@ -32,12 +32,13 @@ this.theme <- theme(axis.title.x = ps2, axis.title.y = ps2, axis.text.x = ps, ax
 - Prototyping with `RStorm`
 - Case Study: Prototyping a Twitter Tracker
 - Bridging the Gap: the `Storm` Package and the Multi-Language Protocol
+- Bridging the Gap: Twitter Streaming APIs
 
 ## Streaming Data
 What makes streaming data a special case?
 
 - Information is constantly flowing
-- Analysis/Models need to be able to update as new information comes in
+- Analysis/Models need to update as new information comes in
 - Deliverables are (often) time sensitive
 - Data piles up quickly -- Can't store everything
 
@@ -87,17 +88,18 @@ What makes up a storm framework?
 The **Topology** specifies:
 
 - Where data comes from
-- What gets down to each piece of data
+- How we process each datum
 - Where results are stored
 
 Once a topology is running:
 
 - New data enters the topology as it arrives
 - The topology extracts relevant information
+- Each datum is processed
 - Applications or databases are updated
 
 ## Storm Topologies
-Storm frameworks are specified by "topologies" consisting of spouts and bolts.
+Storm frameworks are specified by *topologies* consisting of spouts and bolts.
 
 **Spouts:**
 
@@ -108,18 +110,20 @@ Storm frameworks are specified by "topologies" consisting of spouts and bolts.
 
 - Process individual pieces of data
 - Receive data from spouts or other bolts
+- Send data to other bolts
+- Store results in a database
 
 ## Storm: Data Structures
 The basic data structure in Storm is a **tuple**.
 
-- A key-value pair representing an observation
+- A key-value pair representing an observation (*a la* Hadoop/Spark)
 - Spouts *emit* tuples as new data comes in
 - Bolts *consume* tuples, process them, and emit 0 or more new tuples to other bolts
 
 To aggregate results, bolts can also read from and write to more persistent data structures.
 
-- Hash Maps -- quick, global storage internal to topology
-- Databases -- more persistent storage for outside applications
+- Hash Maps -- quick, global storage, internal to topology
+- Databases -- more persistent storage, accessible by outside applications
 
 ## The Topology Visualized
 <img style="width: 1000px; height: 600px; float: center;" src="sample_topo.png">
@@ -128,7 +132,7 @@ To aggregate results, bolts can also read from and write to more persistent data
 So how do we get Storm up-and-running?
 
 - Storm is a complex framework with many dependencies
-- Requires a data engineering team to implement at scale
+- Usually requires a data engineering team to implement at scale
 - Even a local set up is time consuming and requires a fair amount of technical knowledge
 
 Is there a Vagrant box?
@@ -138,7 +142,7 @@ Is there a Vagrant box?
 - No step-by-step tutorials
 
 ## Developing Topologies
-What language do we use to create topologies?  It depends.
+Once Spark is installed, what language do we use to create topologies?
 
 Spouts
 
@@ -172,16 +176,17 @@ RStorm is **not**:
 
 - An equivalent of `Rhipe`/`RHadoop`/`SparkR`
 - A way of communicating with Storm through `R`
-- Used to write bolts that Storm can read (though this is an eventual goal)
+- Used to write bolts that Storm can read (yet)
 
 ## `RStorm` Overview
-`RStorm` works by simulating topologies with `R` functions and data frames
+`RStorm` works by simulating topologies with `R` functions and `data.frames`
 
 - A spout is simulated by a `data.frame`, observations are emitted sequentially by row
 - A tuple is a one row `data.frame`
 - Bolts are functions which take a single tuple (`data.frame`) as input
-- Storage is done exclusively in a hash map, where each record is a key-value pair where the key is a character string and the value is a `data.frame`
-- Hashes can be read/write from inside the topology, or "trackers," which can only be written to row-by-row from within the topology
+- Storage is done exclusively in a hash map, where each record is a key-value pair of the form (`name`, `data.frame`)
+- Hashes can be read/written from inside the topology
+- "Trackers" can only be written to row-by-row from within the topology
 
 ## Top-Level `RStorm` Functions
 These functions are used to specify the topology, run it, and get the results:
@@ -334,6 +339,7 @@ To store the tweets and track the information we need, we'll need hashes and tra
 
 Hashes (read/write):
 
+- Each tweet's time stamp
 - Word Counts
 - Polarity of each tweet
 - Words associated with each polarity
@@ -514,18 +520,17 @@ Implementing the stream is the topic of the tutorial, for now we will:
 - Describe the topology
 - Describe the bolts needed
 - Describe the hashes and trackers
-- Discuss the results
+- View the results
 
 ## Getting Tweets
 Since `RStorm` needs a `data.frame` as input, how do we get tweets?
 
-- Twitter's REST APIs [@rest] search recent tweets by keyword, location, timeframe, etc.
+- `R` package `twitteR` can access Twitter's REST APIs [@rest] 
+- Can search recent tweets by keyword, location, timeframe, etc.
 - Only has access to a few days worth of tweets
 - Tweets for this example were pulled May 27, right after Time Warner Cable and Charter announced their merger
 - We will discuss the REST APIs in more detail during the tutorial
 
-## The Topology
-<img style="width: 750px; float: center;" src="my_topology.png">
 
 ## The Bolts
 Bolt | Purpose
@@ -550,6 +555,9 @@ Bolt | Purpose
 `prop.df` | Tracker | Track percentage per polarity over time
 `polarity.df` | Hash | Store polarity per tweet
 `polar.words.df` | Hash | Keep track of words associated with each polarity
+
+## The Topology
+<img style="width: 1000px; height: 600px; float: center;" src="my_topology.png">
 
 ## Running the Topology
 ```{r}
