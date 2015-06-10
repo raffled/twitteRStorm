@@ -275,7 +275,7 @@ The fifth bolt does as its name suggests: counts the number of times each word a
 
 We start by splitting the text of the tweet into individual words.  Once we've isolated the words, we load the hash `word.counts.df`.  For our first tweet, this hash won't exist yet, so we need to create it.
 
-After loading the count `data.frame`, we apply through our vector of words and increment the count of words that we've already seen.  If the word is new, we add a new row to the `data.frame` with a count of `.
+After loading the count `data.frame`, we apply through our vector of words and increment the count of words that we've already seen.  If the word is new, we add a new row to the `data.frame` with a count of 1.
 
 Once we've updated our `data.frame` of counts, we overwrite the existing version in the hash.
 Since this is the end of a stream branch, we don't need to emit anything.
@@ -477,7 +477,8 @@ polar.corpus <- Corpus(VectorSource(by.polar))
 polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
 colnames(polar.doc.mat) <- rownames(polar.words.df)
 comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1), 
-                 colors = c("black", "cornflowerblue", "red"))
+                 colors = c("black", "cornflowerblue", "red"),
+                 random.order = FALSE)
 ```
 
 ![](twitteRStorm_tutorial_files/figure-html/unnamed-chunk-20-1.png) 

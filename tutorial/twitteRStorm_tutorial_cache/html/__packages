@@ -10,3 +10,4 @@ RColorBrewer
 wordcloud
 dplyr
 tidyr
+ggplot2
