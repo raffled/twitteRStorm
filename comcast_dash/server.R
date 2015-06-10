@@ -17,7 +17,7 @@ shinyServer(
                           min.freq = input$wordcloud.freq,
                           max.words = input$wordcloud.max,
                           scale = c(3, 2),
-                          colors = brewer.pal(8, "Dark2"),
+                          colors = c("black", "red"),
                           random.order = FALSE)
             } else{
                 init.plot
@@ -39,7 +39,9 @@ shinyServer(
                 comparison.cloud(polar.doc.mat,
                                  scale = c(3, 2),
                                  max.words = input$polarcloud.max,
-                                 title.size = 2)
+                                 title.size = 2,
+                                 colors = c("black", "cornflowerblue",
+                                            "red"))
             } else{
                 init.plot
             }
@@ -57,7 +59,9 @@ shinyServer(
                           axis.title.y = element_text(size = 15),
                           legend.title = element_text(size = 15),
                           legend.text = element_text(size = 15)) +
-                    xlab("Time")
+                    xlab("Time") +
+                    scale_color_manual(values = c("cornflowerblue",
+                                          "black", "red"))
             } else{
                 init.plot
             }
