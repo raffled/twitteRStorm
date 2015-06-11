@@ -1,6 +1,10 @@
 base
 plyr
 RStorm
+ROAuth
+bitops
+RCurl
+rjson
 twitteR
 NLP
 tm

@@ -29,20 +29,23 @@ The stream will:
 The following `R` libraries are required:
 
 ```{r}
-library(RStorm)
-library(twitteR)
-library(sentiment)
-library(wordcloud)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(ggplot2)  ## for plots
+library(RStorm)  ## for topology
+library(twitteR)  ## to get tweets
+library(sentiment)  ## to classify polarity
+library(wordcloud)  ## to draw word/comparison cloud
+library(dplyr)  ## data management
+library(tidyr)  ## piping operators for, well, tidyness.
 ```
 
 
 Most of these packages can be installed from CRAN using `install.packages("package_name")`, but `sentiment`
-needs to be installed from source:
+needs to be installed from source.  You may also need to install its dependencies:
 
-```{r, eval = FALSE}
+```{r install.sentiment, eval = FALSE}
+install.packages("tm")
+install.packages("http://cran.r-project.org/src/contrib/Archive/Rstem/Rstem_0.4-1.tar.gz",
+	             repo = NULL, type = "source")
 install.packages("http://cran.r-project.org/src/contrib/Archive/sentiment/sentiment_0.2.tar.gz",
 	             repo = NULL, type = "source")
 ```
@@ -59,32 +62,46 @@ secret, and tokens:
 3. Click `Create New App` if you don't already have one
 4. You can fill in dummy values for Name, Description, and Website
 5. Once you're in your App, click on `Keys and Access Tokens`
-6. The consumer key and secret will already exist, but click `Create
-   my access token` for the access token and secret
-7. Copy and paste these values in `R` and use them to run
-   `setup_twitter_oath()`
+7. Copy and paste the consumer key and secret into the following code:
 
-```{r, eval = FALSE}
-## authorize API access
-consumer.key <- "********"
-consumer.secret <- "********"
-access.token <- "********"
-access.secret <- "********"
-setup_twitter_oauth(consumer.key, consumer.secret,
-                    access.token, access.secret)
+
+```{r Authorize, eval = FALSE}
+#### Set up URLs
+reqURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
+#### Your App Keys
+consumerKey <- "********"
+consumerSecret <- "********"
+#### Authorize Them
+twitCred <- OAuthFactory$new(consumerKey=consumerKey,
+                            consumerSecret=consumerSecret,
+                            requestURL=reqURL,
+                            accessURL=accessURL,
+                            authURL=authURL)
+twitCred$handshake()
+registerTwitterOAuth(twitCred)
 ```
 
-```{r, echo = FALSE}
-## stored my credentials in an ignored script
-source("../twitterAuth.R")
+```{r save.twitter.cred, echo = FALSE, eval = FALSE}
+#### Can't dynamically authorize while knitting document, so we need to save credentials
+#### to make the formatted document.
+#### This saves twitCred to a binary file R can load while knitting
+save(twitCred, file = "twitCred.bin")
+```
+
+```{r load.twitter.cred, echo = FALSE}
+#### load the previously stored credentials
+load("twitCred.bin")
+registerTwitterOAuth(twitCred)
 ```
 
 ### Searching for Tweets
 `twitteR` can search for recent tweets using Twitter's REST APIs.
 
-Once `twitteR` is authorized, we can search for tweets matching whatever keyword we want.  I'll use Comcast, but feel free to use whatever search parameters you prefer.  Note that `searchTwitter()` won't necessarily be able to find as many tweets as we want, becasue the REST APIs will only return recent results.
+Once `twitteR` is authorized, we can search for tweets matching whatever keyword we want.  I'll use Comcast, but feel free to use whatever search parameters you prefer.  Note that `searchTwitter()` won't necessarily be able to find as many tweets as we want, becasue the REST APIs will only return recent results.  During the tutorial, you'll probably want to keep $n$ small.
 
-```{r, cache = TRUE}
+```{r get.tweets, cache = TRUE}
 tweet.list <- searchTwitter(searchString = "comcast", n = 1500, lang = "en")
 tweet.df <- twListToDF(tweet.list)
 colnames(tweet.df)
@@ -93,7 +110,7 @@ dim(tweet.df)
 
 Note that `searchTwitter()` will put the most recent tweets at the top of the `data.frame`, so we'll want to reverse it to simulate tweets arriving in realtime.
 
-```{r}
+```{r reorder.df}
 tweet.df <- tweet.df[order(tweet.df$created),]
 ```
 
@@ -129,14 +146,14 @@ The topology's general structure is:
 ### The Spout
 The `data.frame` `tweet.df` will be used to simulate tweets arriving in realtime.  In `RStorm`, we start the topology by specifying the spout.
 
-```{r}
+```{r start.topo}
 topo <- Topology(tweet.df)
 ```
 
 ### The Bolts
 Before writing any bolts, we need to change one `R` option.  By default, `R` treats strings as factors when creating `data.frames`.  Since several of our bolts will be performing string manipulations, and `RStorm` passed tuples as `data.frames`, turning this behavior off will save us several unnecessary type conversions.
 
-```{r}
+```{r stringAsFactors_FALSE}
 options(stringsAsFactors = FALSE)
 ```
 
@@ -148,7 +165,7 @@ Our first bolt, `track.rate()` calculates the tweets per minute (tpm) every time
 
 Once we've tracked the tpm rate, we simply close the function, since no bolts are downstream.  Finally, we create a bolt from the function which listens to the spout and add it to the topology.
 
-```{r}
+```{r track.rate}
 track.rate <- function(tuple, ...){
     t.stamp <- tuple$created
     ## track current time stamp
@@ -177,7 +194,7 @@ This bolt is the simplest in the stream.  Everything downstream of here only nee
 
 Note that this bolt doesn't depend on `track.rate()`, so it also listens to the spout.
 
-```{r}
+```{r get.text}
 get.text <- function(tuple, ...){
     Emit(Tuple(data.frame(text = tuple$text,
                           t.stamp = tuple$created)), ...)
@@ -192,7 +209,7 @@ These tasks are accomplished using the piping operator from `tidyr` and regular 
 
 After the text is clean, we emit the clean text and continue passing the time stamp down the stream.
 
-```{r}
+```{r clean.text}
 clean.text <- function(tuple, ...){
     text.clean <- tuple$text %>%
         ## convert to UTF-8
@@ -221,7 +238,7 @@ Because we are focusing on the *meaning* or *semantics* of the tweets, words lik
 
 We also perform one extra step for safety.  Some tweets, after being stripped of hyperlinks and special characters, **only** contain stopwords.  Once we remove these, we may be left with tweets that are only whitespace or completely empty.  Before emitting a tuple, we do a check to make sure a tweet contains words.  If not, we simply drop the tuple instead of emitting it.
 
-```{r}
+```{r strip.stopwords}
 strip.stopwords <- function(tuple, ...){
     text.content <- removeWords(tuple$text,
                                 removePunctuation(stopwords("SMART"))) %>%
@@ -244,7 +261,7 @@ After loading the count `data.frame`, we apply through our vector of words and i
 Once we've updated our `data.frame` of counts, we overwrite the existing version in the hash.
 Since this is the end of a stream branch, we don't need to emit anything.
 
-```{r}
+```{r get.word.counts}
 get.word.counts <- function(tuple, ...){
     words <- unlist(strsplit(tuple$text, " "))
     words.df <- GetHash("word.counts.df")
@@ -266,14 +283,14 @@ topo <- AddBolt(topo, Bolt(get.word.counts, listen = 4, boltID = 5))
 #### Bolt 6:
 Bolt 6, `get.polarity()` listens to `strip.stopwords()`.  The purpose of this bolt is to classify the polarity of a given tweet.  The `classify_polarity()` function implements a Naive-Bayes classifier which uses the polarity of the words in the tweet to predict the polarity of the entire tweet.  For example,
 
-```{r}
+```{r sentiment.sample}
 classify_polarity("I love Statistics")
 classify_polarity("I hate Statistics")
 ```
 
 For the given tweet, we classify the polarity and pass the text, time stamp, and polarity down the stream.
 
-```{r}
+```{r get.polarity}
 get.polarity <- function(tuple, ...){
     polarity <- classify_polarity(tuple$text)[,4]
     Emit(Tuple(data.frame(text = tuple$text,
@@ -293,7 +310,7 @@ From here, we create a logical matrix with one column for each polarity value, "
 
 We then find the column means for the matrix, which will give us the overall proportion of tweets with each polarity.  We store these means as a single-row `data.frame` and add them to the tracker `prop.df`
 
-```{r}
+```{r track.polarity}
 track.polarity <- function(tuple, ...){
     polarity.df <- GetHash("polarity.df")
     if(!is.data.frame(polarity.df)) polarity.df <- data.frame()
@@ -320,7 +337,7 @@ The structure of `polar.words.df` bears some explaining. The `comparison.cloud()
 
 Because `RStorm` only supports `data.frame` values for hashes, and each word vector may have a different length, we cannot use a simple $n \times 3$ `data.frame` to store the words.  Instead, we can use some `R` trickery and store each word vector as a `list`.  `R` can then make a $3 \times 1$ `matrix` of `lists`, which we can coerce into a `data.frame` for storage.  The polarity itself is used to name the rows of the `matrix`, so can keep track of which vector corresponds to which class.
 
-```{r}
+```{r store.words.polarity}
 store.words.polarity <- function(tuple, ...){
     polar.words.df <- GetHash("polar.words.df")
     if(!is.data.frame(polar.words.df)) polar.words.df <- data.frame()
@@ -343,7 +360,7 @@ topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))
 ## Running the Topology
 Now that our bolts are created and added to the topology, we can run the simulation.  Note that, depending on how many tweets you pulled and your processor speed, this may take several minutes.
 
-```{r, cache = TRUE}
+```{r run.topo, cache = TRUE}
 topo
 system.time(result <- RStorm(topo))
 result
@@ -354,7 +371,7 @@ We can get our results by extracting the hashes and trackers from the `result` o
 
 ### Word Frequencies: Word Clouds
 The `wordcloud()` function draws a word cloud given a `vector` of words and a `vector` of frequencies, which make up the columns of the hashed `data.frame` `word.counts.df`.
-```{r, cache = TRUE}
+```{r word.cloud, cache = TRUE}
 word.df <- GetHash("word.counts.df", result)
 words <- word.df$word
 counts <- word.df$count
@@ -365,7 +382,7 @@ wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5,
 ### Polarity: Comparison Cloud
 We can extract the word lists from `polar.words.df` to build the comparison cloud.
 
-```{r, cache = TRUE}
+```{r comparison.cloud, cache = TRUE}
 polar.words.df <- GetHash("polar.words.df", result)
 by.polar <- list(positive = polar.words.df["positive",][[1]],
                  neutral = polar.words.df["neutral",][[1]],
@@ -381,24 +398,25 @@ comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1),
 ### Polarity over Time
 The `prop.df` tracker is used to make a timeplot of the percentages of each polarity over time.  To plot the percentages over time in `ggplot2`, we first need to convert the data from a wide format to a long format.
 
-```{r}
+```{r prop.plot}
 prop.df <- GetTrack("prop.df", result)
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
   ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
-    geom_line() + theme(legend.position = "top")
+    geom_line() + theme(legend.position = "top") + 
+    scale_color_manual(values = c("cornflowerblue", "black", "red"))
 ```
 
 ### Tweet Rate over Time
 We stored the rate of tweets per minute in `tpm.df`, in a similar process as polarity over time.
 
-```{r}
+```{r tpm.plot}
 tpm.df <- GetTrack("tpm.df", result)
 ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + 
       geom_line()
 ```
 
 Of course, as a matter of safety and good practice, we should set the global `stringsAsFactors` options back to `TRUE`.
-```{r}
+```{r stringsAsFactors_TRUE}
 options(stringsAsFactors = TRUE)
 ```
 

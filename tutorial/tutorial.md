@@ -21,21 +21,24 @@ The following `R` libraries are required:
 
 
 ```r
-library(RStorm)
-library(twitteR)
-library(sentiment)
-library(wordcloud)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(ggplot2)  ## for plots
+library(RStorm)  ## for topology
+library(twitteR)  ## to get tweets
+library(sentiment)  ## to classify polarity
+library(wordcloud)  ## to draw word/comparison cloud
+library(dplyr)  ## data management
+library(tidyr)  ## piping operators for, well, tidyness.
 ```
 
 
 Most of these packages can be installed from CRAN using `install.packages("package_name")`, but `sentiment`
-needs to be installed from source:
+needs to be installed from source.  You may also need to install its dependencies:
 
 
 ```r
+install.packages("tm")
+install.packages("http://cran.r-project.org/src/contrib/Archive/Rstem/Rstem_0.4-1.tar.gz",
+	             repo = NULL, type = "source")
 install.packages("http://cran.r-project.org/src/contrib/Archive/sentiment/sentiment_0.2.tar.gz",
 	             repo = NULL, type = "source")
 ```
@@ -52,31 +55,39 @@ secret, and tokens:
 3. Click `Create New App` if you don't already have one
 4. You can fill in dummy values for Name, Description, and Website
 5. Once you're in your App, click on `Keys and Access Tokens`
-6. The consumer key and secret will already exist, but click `Create
-   my access token` for the access token and secret
-7. Copy and paste these values in `R` and use them to run
-   `setup_twitter_oath()`
+7. Copy and paste the consumer key and secret into the following code:
+
 
 
 ```r
-## authorize API access
-consumer.key <- "********"
-consumer.secret <- "********"
-access.token <- "********"
-access.secret <- "********"
-setup_twitter_oauth(consumer.key, consumer.secret,
-                    access.token, access.secret)
+#### Set up URLs
+reqURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
+#### Your App Keys
+consumerKey <- "********"
+consumerSecret <- "********"
+#### Authorize Them
+twitCred <- OAuthFactory$new(consumerKey=consumerKey,
+                            consumerSecret=consumerSecret,
+                            requestURL=reqURL,
+                            accessURL=accessURL,
+                            authURL=authURL)
+twitCred$handshake()
+registerTwitterOAuth(twitCred)
 ```
 
 
+
+
 ```
-## [1] "Using direct authentication"
+## [1] TRUE
 ```
 
 ### Searching for Tweets
 `twitteR` can search for recent tweets using Twitter's REST APIs.
 
-Once `twitteR` is authorized, we can search for tweets matching whatever keyword we want.  I'll use Comcast, but feel free to use whatever search parameters you prefer.  Note that `searchTwitter()` won't necessarily be able to find as many tweets as we want, becasue the REST APIs will only return recent results.
+Once `twitteR` is authorized, we can search for tweets matching whatever keyword we want.  I'll use Comcast, but feel free to use whatever search parameters you prefer.  Note that `searchTwitter()` won't necessarily be able to find as many tweets as we want, becasue the REST APIs will only return recent results.  During the tutorial, you'll probably want to keep $n$ small.
 
 
 ```r
@@ -437,7 +448,7 @@ system.time(result <- RStorm(topo))
 
 ```
 ##    user  system elapsed 
-## 318.816   6.216 474.081
+## 314.850   5.655 326.676
 ```
 
 ```r
@@ -462,7 +473,7 @@ wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5,
           colors = c("black", "red"))
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-19-1.png) 
+![](tutorial_files/figure-html/word.cloud-1.png) 
 
 ### Polarity: Comparison Cloud
 We can extract the word lists from `polar.words.df` to build the comparison cloud.
@@ -481,7 +492,7 @@ comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1),
                  random.order = FALSE)
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-20-1.png) 
+![](tutorial_files/figure-html/comparison.cloud-1.png) 
 
 ### Polarity over Time
 The `prop.df` tracker is used to make a timeplot of the percentages of each polarity over time.  To plot the percentages over time in `ggplot2`, we first need to convert the data from a wide format to a long format.
@@ -491,10 +502,11 @@ The `prop.df` tracker is used to make a timeplot of the percentages of each pola
 prop.df <- GetTrack("prop.df", result)
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
   ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
-    geom_line() + theme(legend.position = "top")
+    geom_line() + theme(legend.position = "top") + 
+    scale_color_manual(values = c("cornflowerblue", "black", "red"))
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-21-1.png) 
+![](tutorial_files/figure-html/prop.plot-1.png) 
 
 ### Tweet Rate over Time
 We stored the rate of tweets per minute in `tpm.df`, in a similar process as polarity over time.
@@ -506,7 +518,7 @@ ggplot(tpm.df, aes(x = t.stamp, y = tpm)) +
       geom_line()
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-22-1.png) 
+![](tutorial_files/figure-html/tpm.plot-1.png) 
 
 Of course, as a matter of safety and good practice, we should set the global `stringsAsFactors` options back to `TRUE`.
 
