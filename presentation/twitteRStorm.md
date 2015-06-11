@@ -418,7 +418,7 @@ topo
 ```
 
 ```r
-(result <- RStorm(topo))
+result <- RStorm(topo)
 ```
 
 ## Analyzing the Results
