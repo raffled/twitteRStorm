@@ -316,11 +316,24 @@ topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))
 
 
 #### Bolt 8: `store.words.polarity()`
-Bolt 8 listens to `get.polarity()` and stores the word in that tweet in the corresponding list of words.  We start by grabbing the existing `polar.words.df` or creating it if it hasn't already been created.
+Bolt 8 listens to `get.polarity()` and stores the word in that tweet
+in the corresponding list of words.  We start by grabbing the existing
+`polar.words.df` or creating it if it hasn't already been created. 
 
-The structure of `polar.words.df` bears some explaining. The `comparison.cloud()` function we will be using expects the words to be in a structure called a Term Document Matrix (TDM).  The TDM is generated from a list of words in a given document.  In our case, the "documents" are the polarity classes.  So, in order to generate the comparison cloud, we need a vector of words in each polarity.  
+The function works similar to `get.word.counts()`, with one extra
+caveaut. Instead of having an $n \times 1$ data.frame, we have an `n
+\times 3` data.frame, with a column for each polarity. In natural
+language processing, we would call this a Term Document Matrix (TDM).
+The TDM has a column for each "document" we are examining, in this
+case polarity classes.  Then, we have a row for every unique word,
+with the values representing the counts within each document.
 
-Because `RStorm` only supports `data.frame` values for hashes, and each word vector may have a different length, we cannot use a simple $n \times 3$ `data.frame` to store the words.  Instead, we can use some `R` trickery and store each word vector as a `list`.  `R` can then make a $3 \times 1$ `matrix` of `lists`, which we can coerce into a `data.frame` for storage.  The polarity itself is used to name the rows of the `matrix`, so can keep track of which vector corresponds to which class.
+If we've encountered the word before, we increment the word count in
+the correct column, corresponding to the words poliarty.
+
+If it is the first time we are seeing a word, we first create a new
+row of zero, add in the count corresponding to the tweet's polarity,
+then bind this row to our existing term document matrix.
 
 ```{r store.words.polarity}
 store.words.polarity <- function(tuple, ...){
@@ -330,13 +343,20 @@ store.words.polarity <- function(tuple, ...){
     words <- unlist(strsplit(tuple$text, " "))
     polarity <- tuple$polarity
 
-    if(polarity %in% rownames(polar.words.df)){
-        polar.words.df[polarity,][[1]] <- list(append(polar.words.df[polarity,][[1]], words))
-    } else{
-        word.list <- list(words)
-        names(word.list) <- eval(polarity)
-        polar.words.df <- rbind(polar.words.df, as.matrix(word.list))
-    }
+    sapply(words, function(word){
+               if(word %in% rownames(polar.words.df)){
+                   polar.words.df[word, polarity] <<-
+                       polar.words.df[word, polarity] + 1
+               } else {
+                   n <- nrow(polar.words.df)
+                   this.row <- data.frame(positive = 0, neutral = 0,
+                                          negative = 0)
+                   this.row[1, polarity] <- 1
+                   polar.words.df <<- rbind(polar.words.df,
+                                            na.omit(this.row))
+                   rownames(polar.words.df)[n + 1] <<- word
+               }
+           })
     SetHash("polar.words.df", polar.words.df)
 }
 topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))

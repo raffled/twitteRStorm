@@ -16,6 +16,7 @@ library(tidyr)
 source("tutorial/twitterAuth.R")
 
 ## Search Twitter
+## small n for dev
 tweet.list <- searchTwitter(searchString = "comcast", n = 1500, lang = "en")
 tweet.df <- twListToDF(tweet.list)
 colnames(tweet.df)
@@ -141,13 +142,20 @@ store.words.polarity <- function(tuple, ...){
     words <- unlist(strsplit(tuple$text, " "))
     polarity <- tuple$polarity
 
-    if(polarity %in% rownames(polar.words.df)){
-        polar.words.df[polarity,][[1]] <- list(append(polar.words.df[polarity,][[1]], words))
-    } else{
-        word.list <- list(words)
-        names(word.list) <- eval(polarity)
-        polar.words.df <- rbind(polar.words.df, as.matrix(word.list))
-    }
+    sapply(words, function(word){
+               if(word %in% rownames(polar.words.df)){
+                   polar.words.df[word, polarity] <<-
+                       polar.words.df[word, polarity] + 1
+               } else {
+                   n <- nrow(polar.words.df)
+                   this.row <- data.frame(positive = 0, neutral = 0,
+                                          negative = 0)
+                   this.row[1, polarity] <- 1
+                   polar.words.df <<- rbind(polar.words.df,
+                                            na.omit(this.row))
+                   rownames(polar.words.df)[n + 1] <<- word
+               }
+           })
     SetHash("polar.words.df", polar.words.df)
 }
 topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))
@@ -164,14 +172,8 @@ wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5,
     
 
 #### comparison cloud
-polar.words.df <- GetHash("polar.words.df", result)
-by.polar <- list(positive = polar.words.df["positive",][[1]],
-                 neutral = polar.words.df["neutral",][[1]],
-                 negative = polar.words.df["negative",][[1]])
-polar.corpus <- Corpus(VectorSource(by.polar))
-polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
-colnames(polar.doc.mat) <- rownames(polar.words.df)
-comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1), 
+polar.words.df <- na.omit(GetHash("polar.words.df", result))
+comparison.cloud(polar.words.df, min.freq = 10, scale = c(3, 1),
                  colors = c("black", "cornflowerblue", "red"),
                  random.order = FALSE)
 
