@@ -62,7 +62,8 @@ secret, and tokens:
 3. Click `Create New App` if you don't already have one
 4. You can fill in dummy values for Name, Description, and Website
 5. Once you're in your App, click on `Keys and Access Tokens`
-7. Copy and paste the consumer key and secret into the following code:
+6. Your consumer keys should already exist.  Click `Create my access token` for the access token and secret.
+7. Copy and paste the key, token, and secrets into the following code:
 
 
 ```{r Authorize, eval = FALSE}
@@ -75,7 +76,7 @@ setup_twitter_oauth(consumer.key, consumer.secret,
 ```
 
 ```{r really.authorize, echo = FALSE}
-#### Don't want to share my credentials.  Load a hidden script w/ my keys/tokens to auth
+#### Don't want to share my credentials with everyone.  Load a hidden script w/ my keys/tokens to auth
 source("twitterAuth.R")
 ```
 

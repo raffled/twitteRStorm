@@ -55,34 +55,25 @@ secret, and tokens:
 3. Click `Create New App` if you don't already have one
 4. You can fill in dummy values for Name, Description, and Website
 5. Once you're in your App, click on `Keys and Access Tokens`
-7. Copy and paste the consumer key and secret into the following code:
+6. Your consumer keys should already exist.  Click `Create my access token` for the access token and secret.
+7. Copy and paste the key, token, and secrets into the following code:
 
 
 
 ```r
-#### Set up URLs
-reqURL <- "https://api.twitter.com/oauth/request_token"
-accessURL <- "https://api.twitter.com/oauth/access_token"
-authURL <- "https://api.twitter.com/oauth/authorize"
-#### Your App Keys
-consumerKey <- "********"
-consumerSecret <- "********"
-#### Authorize Them
-twitCred <- OAuthFactory$new(consumerKey=consumerKey,
-                            consumerSecret=consumerSecret,
-                            requestURL=reqURL,
-                            accessURL=accessURL,
-                            authURL=authURL)
-twitCred$handshake()
-registerTwitterOAuth(twitCred)
+consumer.key <- '**********'
+consumer.secret <- '**********'
+access.token <- '**********'
+access.secret <- '**********'
+setup_twitter_oauth(consumer.key, consumer.secret,
+                    access.token, access.secret)
 ```
 
 
-
-
 ```
-## [1] TRUE
+## [1] "Using direct authentication"
 ```
+
 
 ### Searching for Tweets
 `twitteR` can search for recent tweets using Twitter's REST APIs.
@@ -501,7 +492,7 @@ The `prop.df` tracker is used to make a timeplot of the percentages of each pola
 ```r
 prop.df <- GetTrack("prop.df", result)
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
-  ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
+ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
     geom_line() + theme(legend.position = "top") + 
     scale_color_manual(values = c("cornflowerblue", "black", "red"))
 ```
