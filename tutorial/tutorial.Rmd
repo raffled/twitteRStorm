@@ -385,7 +385,7 @@ The `prop.df` tracker is used to make a timeplot of the percentages of each pola
 ```{r prop.plot}
 prop.df <- GetTrack("prop.df", result)
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
-  ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
+ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
     geom_line() + theme(legend.position = "top") + 
     scale_color_manual(values = c("cornflowerblue", "black", "red"))
 ```

@@ -1,8 +1,0 @@
-{
-  "id": "-6955786537413359385",
-  "comp": "1",
-  "stream": "1",
-  "task": 9,
-  "tuple": ["snow white and the seven dwarfs", "field2", 3, 4]
-}
-end
