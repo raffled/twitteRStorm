@@ -66,35 +66,19 @@ secret, and tokens:
 
 
 ```{r Authorize, eval = FALSE}
-#### Set up URLs
-reqURL <- "https://api.twitter.com/oauth/request_token"
-accessURL <- "https://api.twitter.com/oauth/access_token"
-authURL <- "https://api.twitter.com/oauth/authorize"
-#### Your App Keys
-consumerKey <- "********"
-consumerSecret <- "********"
-#### Authorize Them
-twitCred <- OAuthFactory$new(consumerKey=consumerKey,
-                            consumerSecret=consumerSecret,
-                            requestURL=reqURL,
-                            accessURL=accessURL,
-                            authURL=authURL)
-twitCred$handshake()
-registerTwitterOAuth(twitCred)
+consumer.key <- '**********'
+consumer.secret <- '**********'
+access.token <- '**********'
+access.secret <- '**********'
+setup_twitter_oauth(consumer.key, consumer.secret,
+                    access.token, access.secret)
 ```
 
-```{r save.twitter.cred, echo = FALSE, eval = FALSE}
-#### Can't dynamically authorize while knitting document, so we need to save credentials
-#### to make the formatted document.
-#### This saves twitCred to a binary file R can load while knitting
-save(twitCred, file = "twitCred.bin")
+```{r really.authorize, echo = FALSE}
+#### Don't want to share my credentials.  Load a hidden script w/ my keys/tokens to auth
+source("twitterAuth.R")
 ```
 
-```{r load.twitter.cred, echo = FALSE}
-#### load the previously stored credentials
-load("twitCred.bin")
-registerTwitterOAuth(twitCred)
-```
 
 ### Searching for Tweets
 `twitteR` can search for recent tweets using Twitter's REST APIs.
