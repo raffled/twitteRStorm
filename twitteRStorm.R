@@ -6,33 +6,28 @@ library(wordcloud)
 library(dplyr)
 library(tidyr)
 
-################################ Get Tweets ################################
-#### authorize API access
-## consumer.key <- "********"
-## consumer.secret <- "********"
-## access.token <- "********"
-## access.secret <- "********"
+######## Authorize Twitter
+## consumer.key <- '********'
+## consumer.secret <- '********'
+## access.token <- '********'
+## access.secret <- ' ********'
 ## setup_twitter_oauth(consumer.key, consumer.secret,
 ##                     access.token, access.secret)
+source("tutorial/twitterAuth.R")
 
-## source("twitterAuth.R") ## stored credentials doesn't seem to work,
-##                         ## hack around w/ authorization script
-
-## comcast.list <- searchTwitter("comcast", n = 1500, lang = "en")
-## comcast.df <- twListToDF(comcast.list)
-## head(comcast.df)
-## dim(comcast.df)
-## ## Reverse order to emulate streaming data
-## comcast.df <- comcast.df[order(comcast.df$created),]
-## save(comcast.df, file = "comcastTweetsDF.bin")
-load("comcastTweetsDF.bin")  ## loads data.frame comcast.df
+## Search Twitter
+tweet.list <- searchTwitter(searchString = "comcast", n = 1500, lang = "en")
+tweet.df <- twListToDF(tweet.list)
+colnames(tweet.df)
+dim(tweet.df)
+tweet.df <- tweet.df[order(tweet.df$created),]
 
 ################################ Topology ################################
 #### Saves some pain with working with strings in bolts
 options(stringsAsFactors = FALSE)
 
 #### create the topology
-topo <- Topology(comcast.df[1:200,]) ## subset for testing
+topo <- Topology(tweet.df)
 
 #### Grabs the current time stamp, looks at recent time stamps, and
 #### calculates tweets per minute (tpm)
@@ -164,7 +159,8 @@ system.time(result <- RStorm(topo))
 word.df <- GetHash("word.counts.df", result)
 words <- word.df$word
 counts <- word.df$count
-wordcloud(words, counts)
+wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5, 
+          colors = c("black", "red"))
     
 
 #### comparison cloud
@@ -175,19 +171,21 @@ by.polar <- list(positive = polar.words.df["positive",][[1]],
 polar.corpus <- Corpus(VectorSource(by.polar))
 polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
 colnames(polar.doc.mat) <- rownames(polar.words.df)
-comparison.cloud(polar.doc.mat)
+comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1), 
+                 colors = c("black", "cornflowerblue", "red"),
+                 random.order = FALSE)
 
 #### timeplot of polarity
 prop.df <- GetTrack("prop.df", result)
 prop.df.long <- prop.df %>% gather(Polarity, Proportion, -t.stamp)
 ggplot(prop.df.long, aes(x = t.stamp, y = Proportion, color = Polarity)) +
-    geom_point() + geom_line() + theme(legend.position = "top")
+    geom_line() + theme(legend.position = "top") + 
+    scale_color_manual(values = c("cornflowerblue", "black", "red"))
 
 ## timeplot of tweets per minute
 tpm.df <- GetTrack("tpm.df", result)
-ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + geom_point() +
-    geom_line()
-
+ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + 
+      geom_line()
 
 ## set stringsAsFactors back for safety.
 options(stringsAsFactors = TRUE)

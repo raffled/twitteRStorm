@@ -1,0 +1,6 @@
+consumer.key <- ''
+consumer.secret <- ''
+access.token <- ''
+access.secret <- ''
+setup_twitter_oauth(consumer.key, consumer.secret,
+                    access.token, access.secret)
