@@ -123,7 +123,7 @@ We will need the following hashes and trackers to calculate and track our result
 `t.stamp.df` | Hash | Store unique time stamps
 `tpm.df` | Tracker | Track tweets per minute over time
 `prop.df` | Tracker | Track percentage of each polarity over time
-`polarity.df` | Hash | Store polarity counts
+`polarity.df` | Hash | Store word counts per polarity (term document matrix)
 `polar.words.df` | Hash | Keep track of words associated with each polarity
 
 The topology's general structure is:
@@ -133,7 +133,7 @@ The topology's general structure is:
 The `data.frame` `tweet.df` will be used to simulate tweets arriving in realtime.  In `RStorm`, we start the topology by specifying the spout.
 
 ```{r start.topo}
-topo <- Topology(tweet.df)
+topo <- Topology(tweet.df[1:100,])
 ```
 
 ### The Bolts
@@ -288,7 +288,7 @@ topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6))
 
 #### Bolt 7: `track.polarity()`
 
-`track.polarity()` takes the polarity and time stamp from `get.polarity()` and uses them to keep track of the cumulative percentage of tweets at each polarity over time.
+`track.polarity()` takes the polarity and time stamp from `get.polarity()` and uses them to keep track of the cumulative percentage of tweets of each polarity over time.
 
 We start by getting the `polarity.df` hash, or creating it if it
 hasn't been created yet.  After getting the `data.frame`, we increment
@@ -322,10 +322,6 @@ topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))
 
 
 #### Bolt 8: `store.words.polarity()`
-Bolt 8 listens to `get.polarity()` and stores the word in that tweet
-in the corresponding list of words.  We start by grabbing the existing
-`polar.words.df` or creating it if it hasn't already been created. 
-
 The function works similar to `get.word.counts()`, with one extra
 caveaut. Instead of having an $n \times 1$ data.frame, we have an `n
 \times 3` data.frame, with a column for each polarity. In natural
@@ -374,7 +370,6 @@ Now that our bolts are created and added to the topology, we can run the simulat
 ```{r run.topo, cache = TRUE}
 topo
 system.time(result <- RStorm(topo))
-
 result
 ```
 
@@ -395,14 +390,8 @@ wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5,
 We can extract the word lists from `polar.words.df` to build the comparison cloud.
 
 ```{r comparison.cloud, cache = TRUE}
-polar.words.df <- GetHash("polar.words.df", result)
-by.polar <- list(positive = polar.words.df["positive",][[1]],
-                 neutral = polar.words.df["neutral",][[1]],
-                 negative = polar.words.df["negative",][[1]])
-polar.corpus <- Corpus(VectorSource(by.polar))
-polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
-colnames(polar.doc.mat) <- rownames(polar.words.df)
-comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1), 
+polar.words.df <- na.omit(GetHash("polar.words.df", result))
+comparison.cloud(polar.words.df, min.freq = 10, scale = c(3, 1), 
                  colors = c("black", "cornflowerblue", "red"),
                  random.order = FALSE)
 ```

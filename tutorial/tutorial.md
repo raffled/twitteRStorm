@@ -132,8 +132,8 @@ We will need the following hashes and trackers to calculate and track our result
 `word.counts.df` | Hash | Stores word frequencies
 `t.stamp.df` | Hash | Store unique time stamps
 `tpm.df` | Tracker | Track tweets per minute over time
-`prop.df` | Tracker | Track percentage per polarity over time
-`polarity.df` | Hash | Store polarity per tweet
+`prop.df` | Tracker | Track percentage of each polarity over time
+`polarity.df` | Hash | Store word counts per polarity (term document matrix)
 `polar.words.df` | Hash | Keep track of words associated with each polarity
 
 The topology's general structure is:
@@ -144,11 +144,11 @@ The `data.frame` `tweet.df` will be used to simulate tweets arriving in realtime
 
 
 ```r
-topo <- Topology(tweet.df)
+topo <- Topology(tweet.df[1:100,])
 ```
 
 ```
-## Created a topology with a spout containing  1500 rows.
+## Created a topology with a spout containing  100 rows.
 ```
 
 ### The Bolts
@@ -348,29 +348,34 @@ topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6))
 
 #### Bolt 7: `track.polarity()`
 
-`track.polarity()` takes the polarity and time stamp from `get.polarity()` and uses them to keep track of the cumulative percentage of tweets at each polarity over time.
+`track.polarity()` takes the polarity and time stamp from `get.polarity()` and uses them to keep track of the cumulative percentage of tweets of each polarity over time.
 
-We start by getting the `polarity.df` hash, or creating it if it hasn't been created yet.  After getting the `data.frame`, we simply add our polarity to it and update the hash.
+We start by getting the `polarity.df` hash, or creating it if it
+hasn't been created yet.  After getting the `data.frame`, we increment
+the polarity count corresponding to our tweet and the total number
+tweets and update the hash of the counts.
 
-From here, we create a logical matrix with one column for each polarity value, "positive", "negative", or "neutral."  Every row contains a single value of `TRUE` for the given tweet's polarity, and `FALSE` for the other columns.  
+Using these, we find the cumulative proportion of tweets with each
+polarity and track the fractions.
 
-We then find the column means for the matrix, which will give us the overall proportion of tweets with each polarity.  We store these means as a single-row `data.frame` and add them to the tracker `prop.df`
 
 
 ```r
 track.polarity <- function(tuple, ...){
+    polarity <- tuple$polarity
+    
     polarity.df <- GetHash("polarity.df")
-    if(!is.data.frame(polarity.df)) polarity.df <- data.frame()
-    polarity.df <- rbind(polarity.df,
-                         data.frame(polarity = tuple$polarity))
+    if(!is.data.frame(polarity.df)){
+        polarity.df <- data.frame(positive = 0,
+                                  neutral = 0,
+                                  negative = 0,
+                                  n = 0)
+    }
+    polarity.df[1, c(polarity, "n")] <- polarity.df[1, c(polarity, "n")] + 1
     SetHash("polarity.df", polarity.df)
-    polarity <- polarity.df$polarity
 
-    polar.mat <- cbind(p.positive = (polarity == "positive"),
-                       p.neutral = (polarity == "neutral"),
-                       p.negative = (polarity == "negative"))
-    prop.df <- data.frame(t(colMeans(polar.mat, na.rm = TRUE)),
-                          t.stamp = tuple$t.stamp)
+    prop.df <- data.frame(cbind(polarity.df[1, 1:3]/polarity.df[1, "n"],
+                                t.stamp = tuple$t.stamp))
     TrackRow("prop.df", prop.df)
 }
 topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))
@@ -382,10 +387,6 @@ topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))
 
 
 #### Bolt 8: `store.words.polarity()`
-Bolt 8 listens to `get.polarity()` and stores the word in that tweet
-in the corresponding list of words.  We start by grabbing the existing
-`polar.words.df` or creating it if it hasn't already been created. 
-
 The function works similar to `get.word.counts()`, with one extra
 caveaut. Instead of having an $n \times 1$ data.frame, we have an `n
 \times 3` data.frame, with a column for each polarity. In natural
@@ -460,7 +461,7 @@ system.time(result <- RStorm(topo))
 
 ```
 ##    user  system elapsed 
-## 231.385   5.806 220.981
+## 233.927   5.899 223.496
 ```
 
 ```r
@@ -492,14 +493,8 @@ We can extract the word lists from `polar.words.df` to build the comparison clou
 
 
 ```r
-polar.words.df <- GetHash("polar.words.df", result)
-by.polar <- list(positive = polar.words.df["positive",][[1]],
-                 neutral = polar.words.df["neutral",][[1]],
-                 negative = polar.words.df["negative",][[1]])
-polar.corpus <- Corpus(VectorSource(by.polar))
-polar.doc.mat <- as.matrix(TermDocumentMatrix(polar.corpus))
-colnames(polar.doc.mat) <- rownames(polar.words.df)
-comparison.cloud(polar.doc.mat, min.freq = 10, scale = c(3, 1), 
+polar.words.df <- na.omit(GetHash("polar.words.df", result))
+comparison.cloud(polar.words.df, min.freq = 10, scale = c(3, 1), 
                  colors = c("black", "cornflowerblue", "red"),
                  random.order = FALSE)
 ```
