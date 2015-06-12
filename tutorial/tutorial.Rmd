@@ -329,10 +329,10 @@ case polarity classes.  Then, we have a row for every unique word,
 with the values representing the counts within each document.
 
 If we've encountered the word before, we increment the word count in
-the correct column, corresponding to the words poliarty.
+the column corresponding to the tweet's polarity.
 
 If it is the first time we are seeing a word, we first create a new
-row of zero, add in the count corresponding to the tweet's polarity,
+row of zeros, add a count of 1 in the correct polarity column,
 then bind this row to our existing term document matrix.
 
 ```{r store.words.polarity}
@@ -368,6 +368,7 @@ Now that our bolts are created and added to the topology, we can run the simulat
 ```{r run.topo, cache = TRUE}
 topo
 system.time(result <- RStorm(topo))
+
 result
 ```
 

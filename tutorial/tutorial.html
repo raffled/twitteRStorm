@@ -414,8 +414,9 @@ topo &lt;- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))</code></p
 <div id="bolt-8-store.words.polarity" class="section level4">
 <h4>Bolt 8: <code>store.words.polarity()</code></h4>
 <p>Bolt 8 listens to <code>get.polarity()</code> and stores the word in that tweet in the corresponding list of words. We start by grabbing the existing <code>polar.words.df</code> or creating it if it hasn’t already been created.</p>
-<p>The structure of <code>polar.words.df</code> bears some explaining. The <code>comparison.cloud()</code> function we will be using expects the words to be in a structure called a Term Document Matrix (TDM). The TDM is generated from a list of words in a given document. In our case, the “documents” are the polarity classes. So, in order to generate the comparison cloud, we need a vector of words in each polarity.</p>
-<p>Because <code>RStorm</code> only supports <code>data.frame</code> values for hashes, and each word vector may have a different length, we cannot use a simple <span class="math">\(n \times 3\)</span> <code>data.frame</code> to store the words. Instead, we can use some <code>R</code> trickery and store each word vector as a <code>list</code>. <code>R</code> can then make a <span class="math">\(3 \times 1\)</span> <code>matrix</code> of <code>lists</code>, which we can coerce into a <code>data.frame</code> for storage. The polarity itself is used to name the rows of the <code>matrix</code>, so can keep track of which vector corresponds to which class.</p>
+<p>The function works similar to <code>get.word.counts()</code>, with one extra caveaut. Instead of having an <span class="math">\(n \times 1\)</span> data.frame, we have an <code>n \times 3</code> data.frame, with a column for each polarity. In natural language processing, we would call this a Term Document Matrix (TDM). The TDM has a column for each “document” we are examining, in this case polarity classes. Then, we have a row for every unique word, with the values representing the counts within each document.</p>
+<p>If we’ve encountered the word before, we increment the word count in the column corresponding to the tweet’s polarity.</p>
+<p>If it is the first time we are seeing a word, we first create a new row of zeros, add a count of 1 in the correct polarity column, then bind this row to our existing term document matrix.</p>
 <pre class="r"><code>store.words.polarity &lt;- function(tuple, ...){
     polar.words.df &lt;- GetHash(&quot;polar.words.df&quot;)
     if(!is.data.frame(polar.words.df)) polar.words.df &lt;- data.frame()
@@ -423,13 +424,20 @@ topo &lt;- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))</code></p
     words &lt;- unlist(strsplit(tuple$text, &quot; &quot;))
     polarity &lt;- tuple$polarity
 
-    if(polarity %in% rownames(polar.words.df)){
-        polar.words.df[polarity,][[1]] &lt;- list(append(polar.words.df[polarity,][[1]], words))
-    } else{
-        word.list &lt;- list(words)
-        names(word.list) &lt;- eval(polarity)
-        polar.words.df &lt;- rbind(polar.words.df, as.matrix(word.list))
-    }
+    sapply(words, function(word){
+               if(word %in% rownames(polar.words.df)){
+                   polar.words.df[word, polarity] &lt;&lt;-
+                       polar.words.df[word, polarity] + 1
+               } else {
+                   n &lt;- nrow(polar.words.df)
+                   this.row &lt;- data.frame(positive = 0, neutral = 0,
+                                          negative = 0)
+                   this.row[1, polarity] &lt;- 1
+                   polar.words.df &lt;&lt;- rbind(polar.words.df,
+                                            na.omit(this.row))
+                   rownames(polar.words.df)[n + 1] &lt;&lt;- word
+               }
+           })
     SetHash(&quot;polar.words.df&quot;, polar.words.df)
 }
 topo &lt;- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))</code></pre>
@@ -453,7 +461,7 @@ topo &lt;- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))</co
 ## No finalize function specified</code></pre>
 <pre class="r"><code>system.time(result &lt;- RStorm(topo))</code></pre>
 <pre><code>##    user  system elapsed 
-## 314.850   5.655 326.676</code></pre>
+## 231.385   5.806 220.981</code></pre>
 <pre class="r"><code>result</code></pre>
 <pre><code>## Name of the stored hashmaps:[1] &quot;t.stamp.df&quot;     &quot;word.counts.df&quot; &quot;polarity.df&quot;    &quot;polar.words.df&quot;</code></pre>
 </div>
