@@ -76,7 +76,7 @@ Once a topology is running:
 - New data enters the topology as it arrives
 - The topology extracts relevant information
 - Each datum is processed
-- Applications or databases are updated
+- Applications, model parameters, databases, etc. are updated
 
 ## Storm Topologies
 Storm frameworks are specified by *topologies* consisting of:
@@ -91,7 +91,7 @@ Storm frameworks are specified by *topologies* consisting of:
 - Process individual pieces of data
 - Receive data from spouts or other bolts
 - Send data to other bolts
-- Store results in a database
+- Store results, update models, etc.
 
 ## Storm: Data Structures
 The basic data structure in Storm is a **tuple**.
@@ -323,6 +323,13 @@ You're a data scientist working for Comcast, and management wants to monitor twe
 
 - Storm (or Spark Streaming).  Assume this is the case.
 
+## Implementing the Twitter Stream
+Implementing the stream is the topic of the tutorial, for now we will:
+
+- Describe the topology
+- Describe the bolts needed
+- Describe the hashes and trackers
+
 ## Prototyping the Stream
 For our stream, we'll need:
 
@@ -353,14 +360,6 @@ Trackers (write row-by-row):
 - Polarity Percentages updated as tweets come in
 
 
-
-## Implementing the Twitter Stream
-Implementing the stream is the topic of the tutorial, for now we will:
-
-- Describe the topology
-- Describe the bolts needed
-- Describe the hashes and trackers
-
 ## Getting Tweets
 Since `RStorm` needs a `data.frame` as input, how do we get tweets?
 
@@ -371,66 +370,8 @@ Since `RStorm` needs a `data.frame` as input, how do we get tweets?
 - We will discuss the REST APIs in more detail during the tutorial
 
 
-## The Bolts
-Bolt | Purpose
------|-------------
-`track.rate()` | Calculate and track tweets per minute over time
-`get.text()` | Extract text from tweet
-`clean.text()` | Clean special characters, links, punctuation, etc.
-`strip.stopwords()` | Clean conjunctions, prepositions, etc.
-`get.word.counts()` | Create and update word counts
-`get.polarity()` | Classify polarity of a tweet
-`track.polarity()` | Track percentage of positive/negative/neutral tweets over time
-`store.words.polarity()` | Store word counts for each polarity level
-
-## Data Frames
-
-`data.frame` | Role | Description
--------------|------|---------------
-`comcast.df` | Spout | Table to simulate tweets 
-`word.counts.df` | Hash | Stores word frequencies
-`t.stamp.df` | Hash | Store unique time stamps
-`tpm.df` | Tracker | Track tweets per minute over time
-`prop.df` | Tracker | Track percentage per polarity over time
-`polarity.df` | Hash | Store polarity per tweet
-`polar.words.df` | Hash | Keep track of word counts associated with each polarity
-
 ## The Topology
 <img style="width: 1000px; height: 600px; float: center;" src="my_topology.png">
-
-## Running the Topology
-
-```r
-topo
-```
-
-```
-## Topology with a spout containing 200 rows 
-##  - Bolt ( 1 ): * track.rate * listens to 0 
-##  - Bolt ( 2 ): * get.text * listens to 0 
-##  - Bolt ( 3 ): * clean.text * listens to 2 
-##  - Bolt ( 4 ): * strip.stopwords * listens to 3 
-##  - Bolt ( 5 ): * get.word.counts * listens to 4 
-##  - Bolt ( 6 ): * get.polarity * listens to 4 
-##  - Bolt ( 7 ): * track.polarity * listens to 6 
-##  - Bolt ( 8 ): * store.words.polarity * listens to 6 
-## No finalize function specified
-```
-
-```r
-result <- RStorm(topo)
-```
-
-## Analyzing the Results
-To analyze the results we need to:
-
-- Read `word.counts.df` and make a wordcloud
-- Read `polar.words.df` and make a comparison cloud
-- Read `tpm.df` and make a timeplot
-- Read `prop.df` and make a timeplot
-
-We'll do this in the tutorial.
-
 
 ## Bridging the Gap
 How do we go past prototyping with `RStorm` to developing for Storm in `R`?

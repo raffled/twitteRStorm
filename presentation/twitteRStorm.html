@@ -184,7 +184,7 @@
 <li>New data enters the topology as it arrives</li>
 <li>The topology extracts relevant information</li>
 <li>Each datum is processed</li>
-<li>Applications or databases are updated</li>
+<li>Applications, model parameters, databases, etc. are updated</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Storm Topologies</h2></hgroup><article  id="storm-topologies">
@@ -204,7 +204,7 @@
 <li>Process individual pieces of data</li>
 <li>Receive data from spouts or other bolts</li>
 <li>Send data to other bolts</li>
-<li>Store results in a database</li>
+<li>Store results, update models, etc.</li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Storm: Data Structures</h2></hgroup><article  id="storm-data-structures">
@@ -494,6 +494,16 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>Storm (or Spark Streaming). Assume this is the case.</li>
 </ul>
 
+</article></slide><slide class=''><hgroup><h2>Implementing the Twitter Stream</h2></hgroup><article  id="implementing-the-twitter-stream">
+
+<p>Implementing the stream is the topic of the tutorial, for now we will:</p>
+
+<ul>
+<li>Describe the topology</li>
+<li>Describe the bolts needed</li>
+<li>Describe the hashes and trackers</li>
+</ul>
+
 </article></slide><slide class=''><hgroup><h2>Prototyping the Stream</h2></hgroup><article  id="prototyping-the-stream">
 
 <p>For our stream, we&#39;ll need:</p>
@@ -533,16 +543,6 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>Polarity Percentages updated as tweets come in</li>
 </ul>
 
-</article></slide><slide class=''><hgroup><h2>Implementing the Twitter Stream</h2></hgroup><article  id="implementing-the-twitter-stream">
-
-<p>Implementing the stream is the topic of the tutorial, for now we will:</p>
-
-<ul>
-<li>Describe the topology</li>
-<li>Describe the bolts needed</li>
-<li>Describe the hashes and trackers</li>
-</ul>
-
 </article></slide><slide class=''><hgroup><h2>Getting Tweets</h2></hgroup><article  id="getting-tweets">
 
 <p>Since <code>RStorm</code> needs a <code>data.frame</code> as input, how do we get tweets?</p>
@@ -555,125 +555,9 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>We will discuss the REST APIs in more detail during the tutorial</li>
 </ul>
 
-</article></slide><slide class=''><hgroup><h2>The Bolts</h2></hgroup><article  id="the-bolts">
-
-<table class = 'rmdtable'>
-<tr class="header">
-<th align="left">Bolt</th>
-<th align="left">Purpose</th>
-</tr>
-<tr class="odd">
-<td align="left"><code>track.rate()</code></td>
-<td align="left">Calculate and track tweets per minute over time</td>
-</tr>
-<tr class="even">
-<td align="left"><code>get.text()</code></td>
-<td align="left">Extract text from tweet</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>clean.text()</code></td>
-<td align="left">Clean special characters, links, punctuation, etc.</td>
-</tr>
-<tr class="even">
-<td align="left"><code>strip.stopwords()</code></td>
-<td align="left">Clean conjunctions, prepositions, etc.</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>get.word.counts()</code></td>
-<td align="left">Create and update word counts</td>
-</tr>
-<tr class="even">
-<td align="left"><code>get.polarity()</code></td>
-<td align="left">Classify polarity of a tweet</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>track.polarity()</code></td>
-<td align="left">Track percentage of positive/negative/neutral tweets over time</td>
-</tr>
-<tr class="even">
-<td align="left"><code>store.words.polarity()</code></td>
-<td align="left">Store word counts for each polarity level</td>
-</tr>
-</table>
-
-</article></slide><slide class=''><hgroup><h2>Data Frames</h2></hgroup><article  id="data-frames">
-
-<table class = 'rmdtable'>
-<tr class="header">
-<th align="left"><code>data.frame</code></th>
-<th align="left">Role</th>
-<th align="left">Description</th>
-</tr>
-<tr class="odd">
-<td align="left"><code>comcast.df</code></td>
-<td align="left">Spout</td>
-<td align="left">Table to simulate tweets</td>
-</tr>
-<tr class="even">
-<td align="left"><code>word.counts.df</code></td>
-<td align="left">Hash</td>
-<td align="left">Stores word frequencies</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>t.stamp.df</code></td>
-<td align="left">Hash</td>
-<td align="left">Store unique time stamps</td>
-</tr>
-<tr class="even">
-<td align="left"><code>tpm.df</code></td>
-<td align="left">Tracker</td>
-<td align="left">Track tweets per minute over time</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>prop.df</code></td>
-<td align="left">Tracker</td>
-<td align="left">Track percentage per polarity over time</td>
-</tr>
-<tr class="even">
-<td align="left"><code>polarity.df</code></td>
-<td align="left">Hash</td>
-<td align="left">Store polarity per tweet</td>
-</tr>
-<tr class="odd">
-<td align="left"><code>polar.words.df</code></td>
-<td align="left">Hash</td>
-<td align="left">Keep track of word counts associated with each polarity</td>
-</tr>
-</table>
-
 </article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
 
 <p><img style="width: 1000px; height: 600px; float: center;" src="my_topology.png"></p>
-
-</article></slide><slide class=''><hgroup><h2>Running the Topology</h2></hgroup><article  id="running-the-topology">
-
-<pre class = 'prettyprint lang-r'>topo</pre>
-
-<pre >## Topology with a spout containing 200 rows 
-##  - Bolt ( 1 ): * track.rate * listens to 0 
-##  - Bolt ( 2 ): * get.text * listens to 0 
-##  - Bolt ( 3 ): * clean.text * listens to 2 
-##  - Bolt ( 4 ): * strip.stopwords * listens to 3 
-##  - Bolt ( 5 ): * get.word.counts * listens to 4 
-##  - Bolt ( 6 ): * get.polarity * listens to 4 
-##  - Bolt ( 7 ): * track.polarity * listens to 6 
-##  - Bolt ( 8 ): * store.words.polarity * listens to 6 
-## No finalize function specified</pre>
-
-<pre class = 'prettyprint lang-r'>result &lt;- RStorm(topo)</pre>
-
-</article></slide><slide class=''><hgroup><h2>Analyzing the Results</h2></hgroup><article  id="analyzing-the-results">
-
-<p>To analyze the results we need to:</p>
-
-<ul>
-<li>Read <code>word.counts.df</code> and make a wordcloud</li>
-<li>Read <code>polar.words.df</code> and make a comparison cloud</li>
-<li>Read <code>tpm.df</code> and make a timeplot</li>
-<li>Read <code>prop.df</code> and make a timeplot</li>
-</ul>
-
-<p>We&#39;ll do this in the tutorial.</p>
 
 </article></slide><slide class=''><hgroup><h2>Bridging the Gap</h2></hgroup><article  id="bridging-the-gap">
 
