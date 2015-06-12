@@ -122,8 +122,8 @@ We will need the following hashes and trackers to calculate and track our result
 `word.counts.df` | Hash | Stores word frequencies
 `t.stamp.df` | Hash | Store unique time stamps
 `tpm.df` | Tracker | Track tweets per minute over time
-`prop.df` | Tracker | Track percentage per polarity over time
-`polarity.df` | Hash | Store polarity per tweet
+`prop.df` | Tracker | Track percentage of each polarity over time
+`polarity.df` | Hash | Store polarity counts
 `polar.words.df` | Hash | Keep track of words associated with each polarity
 
 The topology's general structure is:
@@ -290,26 +290,31 @@ topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6))
 
 `track.polarity()` takes the polarity and time stamp from `get.polarity()` and uses them to keep track of the cumulative percentage of tweets at each polarity over time.
 
-We start by getting the `polarity.df` hash, or creating it if it hasn't been created yet.  After getting the `data.frame`, we simply add our polarity to it and update the hash.
+We start by getting the `polarity.df` hash, or creating it if it
+hasn't been created yet.  After getting the `data.frame`, we increment
+the polarity count corresponding to our tweet and the total number
+tweets and update the hash of the counts.
 
-From here, we create a logical matrix with one column for each polarity value, "positive", "negative", or "neutral."  Every row contains a single value of `TRUE` for the given tweet's polarity, and `FALSE` for the other columns.  
+Using these, we find the cumulative proportion of tweets with each
+polarity and track the fractions.
 
-We then find the column means for the matrix, which will give us the overall proportion of tweets with each polarity.  We store these means as a single-row `data.frame` and add them to the tracker `prop.df`
 
 ```{r track.polarity}
 track.polarity <- function(tuple, ...){
+    polarity <- tuple$polarity
+    
     polarity.df <- GetHash("polarity.df")
-    if(!is.data.frame(polarity.df)) polarity.df <- data.frame()
-    polarity.df <- rbind(polarity.df,
-                         data.frame(polarity = tuple$polarity))
+    if(!is.data.frame(polarity.df)){
+        polarity.df <- data.frame(positive = 0,
+                                  neutral = 0,
+                                  negative = 0,
+                                  n = 0)
+    }
+    polarity.df[1, c(polarity, "n")] <- polarity.df[1, c(polarity, "n")] + 1
     SetHash("polarity.df", polarity.df)
-    polarity <- polarity.df$polarity
 
-    polar.mat <- cbind(p.positive = (polarity == "positive"),
-                       p.neutral = (polarity == "neutral"),
-                       p.negative = (polarity == "negative"))
-    prop.df <- data.frame(t(colMeans(polar.mat, na.rm = TRUE)),
-                          t.stamp = tuple$t.stamp)
+    prop.df <- data.frame(cbind(polarity.df[1, 1:3]/polarity.df[1, "n"],
+                                t.stamp = tuple$t.stamp))
     TrackRow("prop.df", prop.df)
 }
 topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))

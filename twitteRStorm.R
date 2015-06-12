@@ -17,7 +17,7 @@ source("tutorial/twitterAuth.R")
 
 ## Search Twitter
 ## small n for dev
-tweet.list <- searchTwitter(searchString = "comcast", n = 1500, lang = "en")
+tweet.list <- searchTwitter(searchString = "comcast", n = 100, lang = "en")
 tweet.df <- twListToDF(tweet.list)
 colnames(tweet.df)
 dim(tweet.df)
@@ -119,18 +119,20 @@ get.polarity <- function(tuple, ...){
 topo <- AddBolt(topo, Bolt(get.polarity, listen = 4, boltID = 6))
 
 track.polarity <- function(tuple, ...){
+    polarity <- tuple$polarity
+    
     polarity.df <- GetHash("polarity.df")
-    if(!is.data.frame(polarity.df)) polarity.df <- data.frame()
-    polarity.df <- rbind(polarity.df,
-                         data.frame(polarity = tuple$polarity))
+    if(!is.data.frame(polarity.df)){
+        polarity.df <- data.frame(positive = 0,
+                                  neutral = 0,
+                                  negative = 0,
+                                  n = 0)
+    }
+    polarity.df[1, c(polarity, "n")] <- polarity.df[1, c(polarity, "n")] + 1
     SetHash("polarity.df", polarity.df)
-    polarity <- polarity.df$polarity
 
-    polar.mat <- cbind(p.positive = (polarity == "positive"),
-                       p.neutral = (polarity == "neutral"),
-                       p.negative = (polarity == "negative"))
-    prop.df <- data.frame(t(colMeans(polar.mat, na.rm = TRUE)),
-                          t.stamp = tuple$t.stamp)
+    prop.df <- data.frame(cbind(polarity.df[1, 1:3]/polarity.df[1, "n"],
+                                t.stamp = tuple$t.stamp))
     TrackRow("prop.df", prop.df)
 }
 topo <- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))
