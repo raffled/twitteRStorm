@@ -70,6 +70,8 @@ shinyServer(
             if(inds() && TRUE){
                 ggplot(tpm.df[inds(),], aes(x = t.stamp, y = tpm)) +
                     geom_line(size = 1.5) +
+                    geom_smooth(se = FALSE, linetype = "dashed",
+                                size = 1.5) +
                     xlab("Time") +
                     ylab("Tweets per Minute") +
                     theme(axis.title.y = element_text(size = 15),
