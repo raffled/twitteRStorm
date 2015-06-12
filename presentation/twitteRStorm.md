@@ -83,7 +83,7 @@ Storm frameworks are specified by *topologies* consisting of:
 
 **Spouts:**
 
-- Data sources, e.g., Twitter
+- Data sources (e.g., Twitter, user activity, sensor input)
 - Every topology has at least one spout
 
 **Bolts:**
@@ -381,7 +381,7 @@ Bolt | Purpose
 `get.word.counts()` | Create and update word counts
 `get.polarity()` | Classify polarity of a tweet
 `track.polarity()` | Track percentage of positive/negative/neutral tweets over time
-`store.words.polarity()` | Store words for each polarity level
+`store.words.polarity()` | Store word counts for each polarity level
 
 ## Data Frames
 
@@ -393,7 +393,7 @@ Bolt | Purpose
 `tpm.df` | Tracker | Track tweets per minute over time
 `prop.df` | Tracker | Track percentage per polarity over time
 `polarity.df` | Hash | Store polarity per tweet
-`polar.words.df` | Hash | Keep track of words associated with each polarity
+`polar.words.df` | Hash | Keep track of word counts associated with each polarity
 
 ## The Topology
 <img style="width: 1000px; height: 600px; float: center;" src="my_topology.png">

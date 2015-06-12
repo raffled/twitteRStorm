@@ -28,6 +28,7 @@ library(sentiment)  ## to classify polarity
 library(wordcloud)  ## to draw word/comparison cloud
 library(dplyr)  ## data management
 library(tidyr)  ## piping operators for, well, tidyness.
+library(RColorBrewer) ## for color palettes
 ```
 
 
@@ -481,7 +482,7 @@ word.df <- GetHash("word.counts.df", result)
 words <- word.df$word
 counts <- word.df$count
 wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5, 
-          colors = c("black", "red"))
+          colors = brewer.pal(3, "Set1"))
 ```
 
 ![](tutorial_files/figure-html/word.cloud-1.png) 
