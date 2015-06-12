@@ -29,7 +29,7 @@ install.packages("tidyr")
 install.packages("RColorBrewer") 
 ```
 
-Unfortunately, the `sentiment` package and one of its dependencies has been archived, and I haven't found any other pre-trained polarity classifiers.  To install them from the archive, use these lines (**be sure to run the lines appropriate for your OS**):
+Unfortunately, the `sentiment` package and one of its dependencies has been archived, and I haven't found any other pre-trained polarity classifiers that I like.  To install them from the archive, use these lines (**be sure to run the lines appropriate for your OS**, since the archived binaries for `RStem` won't run on windows):
 
 
 ```r
@@ -100,7 +100,9 @@ Once `twitteR` is authorized, we can search for tweets matching whatever keyword
 
 
 ```r
-tweet.list <- searchTwitter(searchString = "comcast", n = 500, lang = "en")
+tweet.list <- searchTwitter(searchString = "comcast", 
+                            n = 1000, 
+                            lang = "en")
 tweet.df <- twListToDF(tweet.list)
 colnames(tweet.df)
 ```
@@ -117,7 +119,7 @@ dim(tweet.df)
 ```
 
 ```
-## [1] 500  16
+## [1] 1000   16
 ```
 
 Note that `searchTwitter()` will put the most recent tweets at the top of the `data.frame`, so we'll want to reverse it to simulate tweets arriving in realtime.
@@ -191,7 +193,8 @@ track.rate <- function(tuple, ...){
     ## track current time stamp
     t.stamp.df <- GetHash("t.stamp.df")
     if(!is.data.frame(t.stamp.df)) t.stamp.df <- data.frame()
-    t.stamp.df <- rbind(t.stamp.df, data.frame(t.stamp = t.stamp))
+    t.stamp.df <- rbind(t.stamp.df, 
+                        data.frame(t.stamp = t.stamp))
     SetHash("t.stamp.df", t.stamp.df)
     
     ## get all time stamps and find when a minute ago was
@@ -199,7 +202,7 @@ track.rate <- function(tuple, ...){
     last.min <- t.stamp - 60
     ## get tpm if we're a minute into the stream
     if(last.min >= min(t.stamp.past)){
-        in.last.min <-  (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp)
+        in.last.min <- (t.stamp.past >= last.min) & (t.stamp.past <= t.stamp)
         tpm <- length(t.stamp.past[in.last.min])
     } else {
         tpm <- length(t.stamp.past)
@@ -257,7 +260,6 @@ clean.text <- function(tuple, ...){
         ## make all whitespace into spaces
         gsub("[[:space:]]+", " ", .)
         
-    names(text.clean) <- NULL ## needed to avoid RStorm missing name error?
     Emit(Tuple(data.frame(text = text.clean, t.stamp = tuple$t.stamp)), ...)
 }
 topo <- AddBolt(topo, Bolt(clean.text, listen = 2, boltID = 3))
@@ -460,7 +462,7 @@ topo
 ```
 
 ```
-## Topology with a spout containing 1500 rows 
+## Topology with a spout containing 100 rows 
 ##  - Bolt ( 1 ): * track.rate * listens to 0 
 ##  - Bolt ( 2 ): * get.text * listens to 0 
 ##  - Bolt ( 3 ): * clean.text * listens to 2 
@@ -478,7 +480,7 @@ system.time(result <- RStorm(topo))
 
 ```
 ##    user  system elapsed 
-## 233.927   5.899 223.496
+##  15.252   0.334  16.140
 ```
 
 ```r
@@ -496,11 +498,12 @@ We can get our results by extracting the hashes and trackers from the `result` o
 The `wordcloud()` function draws a word cloud given a `vector` of words and a `vector` of frequencies, which make up the columns of the hashed `data.frame` `word.counts.df`.
 
 ```r
+color.vec <- c("black", rep("red", 5))
 word.df <- GetHash("word.counts.df", result)
 words <- word.df$word
 counts <- word.df$count
 wordcloud(words, counts, scale = c(3, 1), max.words = 100, min.freq = 5, 
-          colors = brewer.pal(3, "Set1"))
+          colors = color.vec)
 ```
 
 ![](tutorial_files/figure-html/word.cloud-1.png) 
@@ -539,7 +542,7 @@ We stored the rate of tweets per minute in `tpm.df`, in a similar process as pol
 ```r
 tpm.df <- GetTrack("tpm.df", result)
 ggplot(tpm.df, aes(x = t.stamp, y = tpm)) + 
-      geom_line()
+      geom_line() + geom_smooth(se = FALSE, linetype = "dashed", size = 1.5)
 ```
 
 ![](tutorial_files/figure-html/tpm.plot-1.png) 
