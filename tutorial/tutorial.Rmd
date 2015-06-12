@@ -37,7 +37,7 @@ install.packages("tidyr")
 install.packages("RColorBrewer") 
 ```
 
-Unfortunately, the `sentiment` package and one of its dependencies has been archived, and I haven't found any other pre-trained polarity classifiers.  To install them from the archive, use these lines:
+Unfortunately, the `sentiment` package and one of its dependencies has been archived, and I haven't found any other pre-trained polarity classifiers.  To install them from the archive, use these lines (**be sure to run the lines appropriate for your OS**):
 
 ```{r install.sentiment, eval = FALSE}
 install.packages("tm")
