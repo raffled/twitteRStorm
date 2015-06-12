@@ -17,7 +17,37 @@ The stream will:
 4. Visualize and report the rate of tweets in a given time frame.
 
 ## Dependencies
-The following `R` libraries are required:
+To save some time, here are the install commands for the packages you'll need.  Just run the lines for the packages you don't already have.  Note that the authorization steps I'm using require `twitteR` version 1.1.8, so make sure that package in particular is up-to-date.
+
+```r
+install.packages("ggplot2")  
+install.packages("RStorm")  
+install.packages("twitteR")  
+install.packages("wordcloud")  
+install.packages("dplyr")  
+install.packages("tidyr")  
+install.packages("RColorBrewer") 
+```
+
+Unfortunately, the `sentiment` package and one of its dependencies has been archived, and I haven't found any other pre-trained polarity classifiers.  To install them from the archive, use these lines:
+
+
+```r
+install.packages("tm")
+#### FOR NON-WINDOWS USERS
+install.packages("http://www.omegahat.org/Rstem/Rstem_0.4-1.tar.gz",
+	             repo = NULL, type = "source")
+
+#### FOR WINDOWS USERS IN RSTUDIO
+install.packages("RStem")
+
+#### For everyone
+install.packages("http://cran.r-project.org/src/contrib/Archive/sentiment/sentiment_0.2.tar.gz",
+	             repo = NULL, type = "source")
+```
+
+
+Once all the packages are install, we can load the libraries.
 
 
 ```r
@@ -29,19 +59,6 @@ library(wordcloud)  ## to draw word/comparison cloud
 library(dplyr)  ## data management
 library(tidyr)  ## piping operators for, well, tidyness.
 library(RColorBrewer) ## for color palettes
-```
-
-
-Most of these packages can be installed from CRAN using `install.packages("package_name")`, but `sentiment`
-needs to be installed from source.  You may also need to install its dependencies:
-
-
-```r
-install.packages("tm")
-install.packages("http://cran.r-project.org/src/contrib/Archive/Rstem/Rstem_0.4-1.tar.gz",
-	             repo = NULL, type = "source")
-install.packages("http://cran.r-project.org/src/contrib/Archive/sentiment/sentiment_0.2.tar.gz",
-	             repo = NULL, type = "source")
 ```
 
 ## Getting Tweets
@@ -83,7 +100,7 @@ Once `twitteR` is authorized, we can search for tweets matching whatever keyword
 
 
 ```r
-tweet.list <- searchTwitter(searchString = "comcast", n = 1500, lang = "en")
+tweet.list <- searchTwitter(searchString = "comcast", n = 500, lang = "en")
 tweet.df <- twListToDF(tweet.list)
 colnames(tweet.df)
 ```
@@ -100,7 +117,7 @@ dim(tweet.df)
 ```
 
 ```
-## [1] 1500   16
+## [1] 500  16
 ```
 
 Note that `searchTwitter()` will put the most recent tweets at the top of the `data.frame`, so we'll want to reverse it to simulate tweets arriving in realtime.
@@ -111,7 +128,7 @@ tweet.df <- tweet.df[order(tweet.df$created),]
 ```
 
 ## Setting up the Topology
-Now that we have a `data.frame` of tweets, we can use these to simulate an `RStorm` topology.  Recall from the presentation that our spout will be a `data.frame` of tweets, and we will have the following bolts:
+Now that we have a `data.frame` of tweets, we can use these to simulate an `RStorm` topology.  From here, we will build the following bolts to simulate how a stream would look like:
 
 Bolt | Purpose
 -----|-------------
@@ -495,7 +512,7 @@ We can extract the word lists from `polar.words.df` to build the comparison clou
 ```r
 polar.words.df <- na.omit(GetHash("polar.words.df", result))
 comparison.cloud(polar.words.df, min.freq = 10, scale = c(3, 1), 
-                 colors = c("black", "cornflowerblue", "red"),
+                 colors = c("cornflowerblue", "black", "red"),
                  random.order = FALSE)
 ```
 
