@@ -8,6 +8,7 @@ output:
     widescreen: yes
 subtitle: Prototyping a Streaming Framework for Analyzing Tweets with Storm
 bibliography: twitteRStorm_biblio.bib
+tables: true
 ---
 
 ```{r global_options, include=FALSE}
