@@ -134,43 +134,64 @@ library(RColorBrewer) ## for color palettes</code></pre>
 </div>
 <div id="the-sum-code" class="section level2">
 <h2>The Sum Code</h2>
-<pre class="r"><code>(dat &lt;- data.frame(X = 1:5))</code></pre>
+<pre class="r"><code>## create data
+(dat &lt;- data.frame(X = 1:5))</code></pre>
 <pre><code>##   X
 ## 1 1
 ## 2 2
 ## 3 3
 ## 4 4
 ## 5 5</code></pre>
-<pre class="r"><code>topology &lt;- Topology(dat)</code></pre>
+<pre class="r"><code>## initialize topology
+topology &lt;- Topology(dat)</code></pre>
 <pre><code>## Created a topology with a spout containing  5 rows.</code></pre>
-<pre class="r"><code>get.sum &lt;- function(tuple, ...){
+<pre class="r"><code>## create the sum
+get.sum &lt;- function(tuple, ...){
+  ## grab current value from tuple
   current.val &lt;- tuple$X
   
+  ## grab previous sum from hash and create it if we're at the first tuple
   past.sum &lt;- GetHash(&quot;current.sum&quot;)
   if(!is.data.frame(past.sum)) past.sum &lt;- data.frame(Sum = 0)
   
+  ## update the sum
   current.sum &lt;- past.sum$Sum + current.val
+  
+  ## update the hash
   SetHash(&quot;current.sum&quot;, data.frame(Sum = current.sum))
+  
+  ## emit the tuple down the stream
   Emit(Tuple(data.frame(Sum = current.sum)), ...)
 }
+## create the bolt and update the topology
 topology &lt;- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))</code></pre>
 <pre><code>## [1] &quot;Added bolt get.sum to position 1 which listens to 0&quot;</code></pre>
-<pre class="r"><code>track.sum &lt;- function(tuple, ...){
+<pre class="r"><code>## track the sum as the stream goes on
+track.sum &lt;- function(tuple, ...){
+  ## grab the current sum
   current.sum &lt;- tuple$Sum
+  
+  ## track the sum by rbind-ing it to the tracker
   TrackRow(&quot;track.sum&quot;, data.frame(Sum = current.sum))
 }
+## create the bolt and update the topology
 topology &lt;- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))</code></pre>
 <pre><code>## [1] &quot;Added bolt track.sum to position 2 which listens to 1&quot;</code></pre>
-<pre class="r"><code>topology</code></pre>
+<pre class="r"><code>## view the topology
+topology</code></pre>
 <pre><code>## Topology with a spout containing 5 rows 
 ##  - Bolt ( 1 ): * get.sum * listens to 0 
 ##  - Bolt ( 2 ): * track.sum * listens to 1 
 ## No finalize function specified</code></pre>
-<pre class="r"><code>results &lt;- RStorm(topology)
+<pre class="r"><code>## grab our results
+results &lt;- RStorm(topology)
+
+## view the final sum
 GetHash(&quot;current.sum&quot;, results)</code></pre>
 <pre><code>##   Sum
 ## 1  15</code></pre>
-<pre class="r"><code>GetTrack(&quot;track.sum&quot;, results)</code></pre>
+<pre class="r"><code>## see how the sum changed through the stream
+GetTrack(&quot;track.sum&quot;, results)</code></pre>
 <pre><code>##   Sum
 ## 1   1
 ## 2   3

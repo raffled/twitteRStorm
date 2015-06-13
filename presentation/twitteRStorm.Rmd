@@ -398,7 +398,7 @@ Tutorial Source Code:
 
 Rendered HTML:
 
-[stat.wvu.edu/~draffle/tutorial/tutorial.html](http://stat.wvu.edu/~draffle/twitteRStorm/tutorial/tutorial.html)
+[stat.wvu.edu/~draffle/twitteRStorm/tutorial/tutorial.html](http://stat.wvu.edu/~draffle/twitteRStorm/tutorial/tutorial.html)
 
 
 

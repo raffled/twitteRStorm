@@ -64,6 +64,7 @@ library(RColorBrewer) ## for color palettes
 ## The Sum Code
 
 ```r
+## create data
 (dat <- data.frame(X = 1:5))
 ```
 
@@ -77,6 +78,7 @@ library(RColorBrewer) ## for color palettes
 ```
 
 ```r
+## initialize topology
 topology <- Topology(dat)
 ```
 
@@ -85,16 +87,25 @@ topology <- Topology(dat)
 ```
 
 ```r
+## create the sum
 get.sum <- function(tuple, ...){
+  ## grab current value from tuple
   current.val <- tuple$X
   
+  ## grab previous sum from hash and create it if we're at the first tuple
   past.sum <- GetHash("current.sum")
   if(!is.data.frame(past.sum)) past.sum <- data.frame(Sum = 0)
   
+  ## update the sum
   current.sum <- past.sum$Sum + current.val
+  
+  ## update the hash
   SetHash("current.sum", data.frame(Sum = current.sum))
+  
+  ## emit the tuple down the stream
   Emit(Tuple(data.frame(Sum = current.sum)), ...)
 }
+## create the bolt and update the topology
 topology <- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))
 ```
 
@@ -103,10 +114,15 @@ topology <- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))
 ```
 
 ```r
+## track the sum as the stream goes on
 track.sum <- function(tuple, ...){
+  ## grab the current sum
   current.sum <- tuple$Sum
+  
+  ## track the sum by rbind-ing it to the tracker
   TrackRow("track.sum", data.frame(Sum = current.sum))
 }
+## create the bolt and update the topology
 topology <- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))
 ```
 
@@ -115,6 +131,7 @@ topology <- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))
 ```
 
 ```r
+## view the topology
 topology
 ```
 
@@ -126,7 +143,10 @@ topology
 ```
 
 ```r
+## grab our results
 results <- RStorm(topology)
+
+## view the final sum
 GetHash("current.sum", results)
 ```
 
@@ -136,6 +156,7 @@ GetHash("current.sum", results)
 ```
 
 ```r
+## see how the sum changed through the stream
 GetTrack("track.sum", results)
 ```
 
