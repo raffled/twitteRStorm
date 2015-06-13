@@ -106,7 +106,7 @@ To aggregate results, bolts can also read from and write to more persistent data
 - Databases -- more persistent storage, accessible by outside applications
 
 ## The Topology Visualized
-<img style="width: 1000px; height: 600px; float: center;" src="sample_topo.png">
+<img style="height: 500px float: center;" src="storm_topology.png">
 
 ## Getting Storm Running
 So how do we get Storm up-and-running?
@@ -305,61 +305,6 @@ You're a data scientist working for Comcast, and management wants to monitor twe
 6. Can they have a dashboard for the marketing team to monitor, like [this](http://raffled.shinyapps.io/comcast_dash)?
 
 
-## Twitter: Which Platform?
-
-**Small $n$, not time sensitive**
-
-- Batch processing in `R` by day or week is probably good enough
-
-**Small $n$, time sensitive**
-
-- We can probably get away with an automated script and writing to a file/data base from within `R`
-
-**Large $n$, not time sensitive**
-
-- Hadoop or Spark batches run daily or weekly
-
-**Large $n$, time sensitive**
-
-- Storm (or Spark Streaming).  Assume this is the case.
-
-## Implementing the Twitter Stream
-Implementing the stream is the topic of the tutorial, for now we will:
-
-- Describe the topology
-- Describe the bolts needed
-- Describe the hashes and trackers
-
-## Prototyping the Stream
-For our stream, we'll need:
-
-- A `data.frame` of tweets for a spout
-
-Bolts to:
-
-- Track the rate of tweets using their time stamps
-- Clean the text for sentiment analysis and word counts
-- Count the words for the word cloud
-- Classify the polarity
-- Calculate the polarity over time
-- Keep track of the words used in each polarity class
-
-## Hashes
-To store the tweets and track the information we need, we'll need hashes and trackers.
-
-Hashes (read/write):
-
-- Each tweet's time stamp
-- Word Counts
-- Polarity of each tweet
-- Words associated with each polarity
-
-Trackers (write row-by-row):
-
-- Tweets per Minute (TPM) at each new tweet
-- Polarity Percentages updated as tweets come in
-
-
 ## Getting Tweets
 Since `RStorm` needs a `data.frame` as input, how do we get tweets?
 
@@ -369,9 +314,6 @@ Since `RStorm` needs a `data.frame` as input, how do we get tweets?
 - Tweets for this example were pulled May 27, right after Time Warner Cable and Charter announced their merger
 - We will discuss the REST APIs in more detail during the tutorial
 
-
-## The Topology
-<img style="width: 1000px; height: 600px; float: center;" src="my_topology.png">
 
 ## Bridging the Gap
 How do we go past prototyping with `RStorm` to developing for Storm in `R`?

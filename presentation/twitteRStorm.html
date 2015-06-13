@@ -226,7 +226,7 @@
 
 </article></slide><slide class=''><hgroup><h2>The Topology Visualized</h2></hgroup><article  id="the-topology-visualized">
 
-<p><img style="width: 1000px; height: 600px; float: center;" src="sample_topo.png"></p>
+<p><img style="height: 500px float: center;" src="storm_topology.png"></p>
 
 </article></slide><slide class=''><hgroup><h2>Getting Storm Running</h2></hgroup><article  id="getting-storm-running">
 
@@ -468,81 +468,6 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>Can they have a dashboard for the marketing team to monitor, like <a href='http://raffled.shinyapps.io/comcast_dash' title=''>this</a>?</li>
 </ol>
 
-</article></slide><slide class=''><hgroup><h2>Twitter: Which Platform?</h2></hgroup><article  id="twitter-which-platform">
-
-<p><strong>Small \(n\), not time sensitive</strong></p>
-
-<ul>
-<li>Batch processing in <code>R</code> by day or week is probably good enough</li>
-</ul>
-
-<p><strong>Small \(n\), time sensitive</strong></p>
-
-<ul>
-<li>We can probably get away with an automated script and writing to a file/data base from within <code>R</code></li>
-</ul>
-
-<p><strong>Large \(n\), not time sensitive</strong></p>
-
-<ul>
-<li>Hadoop or Spark batches run daily or weekly</li>
-</ul>
-
-<p><strong>Large \(n\), time sensitive</strong></p>
-
-<ul>
-<li>Storm (or Spark Streaming). Assume this is the case.</li>
-</ul>
-
-</article></slide><slide class=''><hgroup><h2>Implementing the Twitter Stream</h2></hgroup><article  id="implementing-the-twitter-stream">
-
-<p>Implementing the stream is the topic of the tutorial, for now we will:</p>
-
-<ul>
-<li>Describe the topology</li>
-<li>Describe the bolts needed</li>
-<li>Describe the hashes and trackers</li>
-</ul>
-
-</article></slide><slide class=''><hgroup><h2>Prototyping the Stream</h2></hgroup><article  id="prototyping-the-stream">
-
-<p>For our stream, we&#39;ll need:</p>
-
-<ul>
-<li>A <code>data.frame</code> of tweets for a spout</li>
-</ul>
-
-<p>Bolts to:</p>
-
-<ul>
-<li>Track the rate of tweets using their time stamps</li>
-<li>Clean the text for sentiment analysis and word counts</li>
-<li>Count the words for the word cloud</li>
-<li>Classify the polarity</li>
-<li>Calculate the polarity over time</li>
-<li>Keep track of the words used in each polarity class</li>
-</ul>
-
-</article></slide><slide class=''><hgroup><h2>Hashes</h2></hgroup><article  id="hashes">
-
-<p>To store the tweets and track the information we need, we&#39;ll need hashes and trackers.</p>
-
-<p>Hashes (read/write):</p>
-
-<ul>
-<li>Each tweet&#39;s time stamp</li>
-<li>Word Counts</li>
-<li>Polarity of each tweet</li>
-<li>Words associated with each polarity</li>
-</ul>
-
-<p>Trackers (write row-by-row):</p>
-
-<ul>
-<li>Tweets per Minute (TPM) at each new tweet</li>
-<li>Polarity Percentages updated as tweets come in</li>
-</ul>
-
 </article></slide><slide class=''><hgroup><h2>Getting Tweets</h2></hgroup><article  id="getting-tweets">
 
 <p>Since <code>RStorm</code> needs a <code>data.frame</code> as input, how do we get tweets?</p>
@@ -554,10 +479,6 @@ GetHash(&quot;current.sum&quot;, results)</pre>
 <li>Tweets for this example were pulled May 27, right after Time Warner Cable and Charter announced their merger</li>
 <li>We will discuss the REST APIs in more detail during the tutorial</li>
 </ul>
-
-</article></slide><slide class=''><hgroup><h2>The Topology</h2></hgroup><article  id="the-topology">
-
-<p><img style="width: 1000px; height: 600px; float: center;" src="my_topology.png"></p>
 
 </article></slide><slide class=''><hgroup><h2>Bridging the Gap</h2></hgroup><article  id="bridging-the-gap">
 

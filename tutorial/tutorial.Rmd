@@ -67,6 +67,35 @@ library(tidyr)  ## piping operators for, well, tidyness.
 library(RColorBrewer) ## for color palettes
 ```
 
+## The Sum Code
+```{r}
+(dat <- data.frame(X = 1:5))
+topology <- Topology(dat)
+
+get.sum <- function(tuple, ...){
+  current.val <- tuple$X
+  
+  past.sum <- GetHash("current.sum")
+  if(!is.data.frame(past.sum)) past.sum <- data.frame(Sum = 0)
+  
+  current.sum <- past.sum$Sum + current.val
+  SetHash("current.sum", data.frame(Sum = current.sum))
+  Emit(Tuple(data.frame(Sum = current.sum)), ...)
+}
+topology <- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))
+
+track.sum <- function(tuple, ...){
+  current.sum <- tuple$Sum
+  TrackRow("track.sum", data.frame(Sum = current.sum))
+}
+topology <- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))
+topology
+
+results <- RStorm(topology)
+GetHash("current.sum", results)
+GetTrack("track.sum", results)
+```
+
 ## Getting Tweets
 ### Authorizing `twitteR`
 In order to search for tweets with `twitteR`, you need to have a valid Twitter account to obtain authorization credentials.

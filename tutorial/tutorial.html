@@ -70,6 +70,7 @@ img {
 <ul>
 <li><a href="#overview">Overview</a></li>
 <li><a href="#dependencies">Dependencies</a></li>
+<li><a href="#the-sum-code">The Sum Code</a></li>
 <li><a href="#getting-tweets">Getting Tweets</a><ul>
 <li><a href="#authorizing-twitter">Authorizing <code>twitteR</code></a></li>
 <li><a href="#searching-for-tweets">Searching for Tweets</a></li>
@@ -130,6 +131,52 @@ library(wordcloud)  ## to draw word/comparison cloud
 library(dplyr)  ## data management
 library(tidyr)  ## piping operators for, well, tidyness.
 library(RColorBrewer) ## for color palettes</code></pre>
+</div>
+<div id="the-sum-code" class="section level2">
+<h2>The Sum Code</h2>
+<pre class="r"><code>(dat &lt;- data.frame(X = 1:5))</code></pre>
+<pre><code>##   X
+## 1 1
+## 2 2
+## 3 3
+## 4 4
+## 5 5</code></pre>
+<pre class="r"><code>topology &lt;- Topology(dat)</code></pre>
+<pre><code>## Created a topology with a spout containing  5 rows.</code></pre>
+<pre class="r"><code>get.sum &lt;- function(tuple, ...){
+  current.val &lt;- tuple$X
+  
+  past.sum &lt;- GetHash(&quot;current.sum&quot;)
+  if(!is.data.frame(past.sum)) past.sum &lt;- data.frame(Sum = 0)
+  
+  current.sum &lt;- past.sum$Sum + current.val
+  SetHash(&quot;current.sum&quot;, data.frame(Sum = current.sum))
+  Emit(Tuple(data.frame(Sum = current.sum)), ...)
+}
+topology &lt;- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))</code></pre>
+<pre><code>## [1] &quot;Added bolt get.sum to position 1 which listens to 0&quot;</code></pre>
+<pre class="r"><code>track.sum &lt;- function(tuple, ...){
+  current.sum &lt;- tuple$Sum
+  TrackRow(&quot;track.sum&quot;, data.frame(Sum = current.sum))
+}
+topology &lt;- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))</code></pre>
+<pre><code>## [1] &quot;Added bolt track.sum to position 2 which listens to 1&quot;</code></pre>
+<pre class="r"><code>topology</code></pre>
+<pre><code>## Topology with a spout containing 5 rows 
+##  - Bolt ( 1 ): * get.sum * listens to 0 
+##  - Bolt ( 2 ): * track.sum * listens to 1 
+## No finalize function specified</code></pre>
+<pre class="r"><code>results &lt;- RStorm(topology)
+GetHash(&quot;current.sum&quot;, results)</code></pre>
+<pre><code>##   Sum
+## 1  15</code></pre>
+<pre class="r"><code>GetTrack(&quot;track.sum&quot;, results)</code></pre>
+<pre><code>##   Sum
+## 1   1
+## 2   3
+## 3   6
+## 4  10
+## 5  15</code></pre>
 </div>
 <div id="getting-tweets" class="section level2">
 <h2>Getting Tweets</h2>

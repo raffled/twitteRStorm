@@ -61,6 +61,93 @@ library(tidyr)  ## piping operators for, well, tidyness.
 library(RColorBrewer) ## for color palettes
 ```
 
+## The Sum Code
+
+```r
+(dat <- data.frame(X = 1:5))
+```
+
+```
+##   X
+## 1 1
+## 2 2
+## 3 3
+## 4 4
+## 5 5
+```
+
+```r
+topology <- Topology(dat)
+```
+
+```
+## Created a topology with a spout containing  5 rows.
+```
+
+```r
+get.sum <- function(tuple, ...){
+  current.val <- tuple$X
+  
+  past.sum <- GetHash("current.sum")
+  if(!is.data.frame(past.sum)) past.sum <- data.frame(Sum = 0)
+  
+  current.sum <- past.sum$Sum + current.val
+  SetHash("current.sum", data.frame(Sum = current.sum))
+  Emit(Tuple(data.frame(Sum = current.sum)), ...)
+}
+topology <- AddBolt(topology, Bolt(get.sum, listen = 0, boltID = 1))
+```
+
+```
+## [1] "Added bolt get.sum to position 1 which listens to 0"
+```
+
+```r
+track.sum <- function(tuple, ...){
+  current.sum <- tuple$Sum
+  TrackRow("track.sum", data.frame(Sum = current.sum))
+}
+topology <- AddBolt(topology, Bolt(track.sum, listen = 1, boltID = 2))
+```
+
+```
+## [1] "Added bolt track.sum to position 2 which listens to 1"
+```
+
+```r
+topology
+```
+
+```
+## Topology with a spout containing 5 rows 
+##  - Bolt ( 1 ): * get.sum * listens to 0 
+##  - Bolt ( 2 ): * track.sum * listens to 1 
+## No finalize function specified
+```
+
+```r
+results <- RStorm(topology)
+GetHash("current.sum", results)
+```
+
+```
+##   Sum
+## 1  15
+```
+
+```r
+GetTrack("track.sum", results)
+```
+
+```
+##   Sum
+## 1   1
+## 2   3
+## 3   6
+## 4  10
+## 5  15
+```
+
 ## Getting Tweets
 ### Authorizing `twitteR`
 In order to search for tweets with `twitteR`, you need to have a valid Twitter account to obtain authorization credentials.
