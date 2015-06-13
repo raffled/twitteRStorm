@@ -62,6 +62,8 @@ library(RColorBrewer) ## for color palettes
 ```
 
 ## The Sum Code
+Before anything else, here is the code for the summation example if you want to run in yourself.
+
 
 ```r
 ## create data

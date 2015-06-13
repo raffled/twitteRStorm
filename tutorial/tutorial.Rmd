@@ -68,6 +68,8 @@ library(RColorBrewer) ## for color palettes
 ```
 
 ## The Sum Code
+Before anything else, here is the code for the summation example if you want to run in yourself.
+
 ```{r}
 ## create data
 (dat <- data.frame(X = 1:5))
@@ -145,6 +147,7 @@ setup_twitter_oauth(consumer.key, consumer.secret,
 
 ```{r really.authorize, echo = FALSE}
 #### Don't want to share my credentials with everyone.  Load a hidden script w/ my keys/tokens to auth
+#### (Don't run this)
 source("twitterAuth.R")
 ```
 
