@@ -63,7 +63,7 @@ What do they all have in common?
 - Users who want speed and accuracy
 
 ## The Storm Framework
-What makes up a storm framework?
+What makes up a Storm framework?
 
 The **Topology** specifies:
 
@@ -108,6 +108,9 @@ To aggregate results, bolts can also read from and write to more persistent data
 ## The Topology Visualized
 <img style="height: 500px float: center;" src="storm_topology.png">
 
+[@storm]
+
+
 ## Getting Storm Running
 So how do we get Storm up-and-running?
 
@@ -122,7 +125,7 @@ Is there a Vagrant box?
 - No step-by-step tutorials
 
 ## Developing Topologies
-Once Spark is installed, what language do we use to create topologies?
+Once Storm is installed, what language do we use to create topologies?
 
 Spouts
 

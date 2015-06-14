@@ -227,7 +227,7 @@ setup_twitter_oauth(consumer.key, consumer.secret,
 <p><code>twitteR</code> can search for recent tweets using Twitter’s REST APIs.</p>
 <p>Once <code>twitteR</code> is authorized, we can search for tweets matching whatever keyword we want. I’ll use Comcast, but feel free to use whatever search parameters you prefer. Note that <code>searchTwitter()</code> won’t necessarily be able to find as many tweets as we want, becasue the REST APIs will only return recent results. During the tutorial, you’ll probably want to keep <span class="math">\(n\)</span> small.</p>
 <pre class="r"><code>tweet.list &lt;- searchTwitter(searchString = &quot;comcast&quot;, 
-                            n = 1000, 
+                            n = 1500, 
                             lang = &quot;en&quot;)
 tweet.df &lt;- twListToDF(tweet.list)
 colnames(tweet.df)</code></pre>
@@ -236,7 +236,7 @@ colnames(tweet.df)</code></pre>
 ##  [9] &quot;replyToUID&quot;    &quot;statusSource&quot;  &quot;screenName&quot;    &quot;retweetCount&quot; 
 ## [13] &quot;isRetweet&quot;     &quot;retweeted&quot;     &quot;longitude&quot;     &quot;latitude&quot;</code></pre>
 <pre class="r"><code>dim(tweet.df)</code></pre>
-<pre><code>## [1] 1000   16</code></pre>
+<pre><code>## [1] 1500   16</code></pre>
 <p>Note that <code>searchTwitter()</code> will put the most recent tweets at the top of the <code>data.frame</code>, so we’ll want to reverse it to simulate tweets arriving in realtime.</p>
 <pre class="r"><code>tweet.df &lt;- tweet.df[order(tweet.df$created),]</code></pre>
 </div>
@@ -337,8 +337,8 @@ colnames(tweet.df)</code></pre>
 <div id="the-spout" class="section level3">
 <h3>The Spout</h3>
 <p>The <code>data.frame</code> <code>tweet.df</code> will be used to simulate tweets arriving in realtime. In <code>RStorm</code>, we start the topology by specifying the spout.</p>
-<pre class="r"><code>topo &lt;- Topology(tweet.df[1:100,])</code></pre>
-<pre><code>## Created a topology with a spout containing  100 rows.</code></pre>
+<pre class="r"><code>topo &lt;- Topology(tweet.df)</code></pre>
+<pre><code>## Created a topology with a spout containing  1500 rows.</code></pre>
 </div>
 <div id="the-bolts" class="section level3">
 <h3>The Bolts</h3>
@@ -523,8 +523,8 @@ topo &lt;- AddBolt(topo, Bolt(track.polarity, listen = 6, boltID = 7))</code></p
                                             na.omit(this.row))
                    rownames(polar.words.df)[n + 1] &lt;&lt;- word
                }
-           })
-    SetHash(&quot;polar.words.df&quot;, polar.words.df)
+          })
+      SetHash(&quot;polar.words.df&quot;, polar.words.df)
 }
 topo &lt;- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))</code></pre>
 <pre><code>## [1] &quot;Added bolt store.words.polarity to position 8 which listens to 6&quot;</code></pre>

@@ -19,6 +19,7 @@ The stream will:
 ## Dependencies
 To save some time, here are the install commands for the packages you'll need.  Just run the lines for the packages you don't already have.  Note that the authorization steps I'm using require `twitteR` version 1.1.8, so make sure that package in particular is up-to-date.
 
+
 ```r
 install.packages("ggplot2")  
 install.packages("RStorm")  
@@ -211,7 +212,7 @@ Once `twitteR` is authorized, we can search for tweets matching whatever keyword
 
 ```r
 tweet.list <- searchTwitter(searchString = "comcast", 
-                            n = 1000, 
+                            n = 1500, 
                             lang = "en")
 tweet.df <- twListToDF(tweet.list)
 colnames(tweet.df)
@@ -229,7 +230,7 @@ dim(tweet.df)
 ```
 
 ```
-## [1] 1000   16
+## [1] 1500   16
 ```
 
 Note that `searchTwitter()` will put the most recent tweets at the top of the `data.frame`, so we'll want to reverse it to simulate tweets arriving in realtime.
@@ -273,11 +274,11 @@ The `data.frame` `tweet.df` will be used to simulate tweets arriving in realtime
 
 
 ```r
-topo <- Topology(tweet.df[1:100,])
+topo <- Topology(tweet.df)
 ```
 
 ```
-## Created a topology with a spout containing  100 rows.
+## Created a topology with a spout containing  1500 rows.
 ```
 
 ### The Bolts
@@ -553,8 +554,8 @@ store.words.polarity <- function(tuple, ...){
                                             na.omit(this.row))
                    rownames(polar.words.df)[n + 1] <<- word
                }
-           })
-    SetHash("polar.words.df", polar.words.df)
+          })
+      SetHash("polar.words.df", polar.words.df)
 }
 topo <- AddBolt(topo, Bolt(store.words.polarity, listen = 6, boltID = 8))
 ```
